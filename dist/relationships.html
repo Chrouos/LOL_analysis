@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>參數關聯 · LOL 賽事數據</title><link rel="stylesheet" href="./dashboard.css?v=8"></head>
+<body>
+<header class="site-header"><div><a class="brand" href="./index.html">LOL 賽事數據</a><nav class="nav" aria-label="主要導覽"><a href="./index.html">賽區</a><a href="./players.html">選手</a><a href="./teams.html">隊伍</a><a href="./backtest.html">回測</a><a href="./worlds.html">世界賽</a><a href="./sources.html">資料來源</a></nav></div></header>
+<main>
+<p class="eyebrow">2026 賽季 · LCK／LPL</p><h1>參數關聯與英雄對位</h1>
+<div class="controls"><label>賽區<select id="venue"><option>LCK</option><option>LPL</option></select></label></div>
+<section><h2>賽前特徵關聯</h2><p class="note" id="matrix-note"></p><div class="scroll" id="matrix"></div></section>
+<section><h2>同位置英雄對位</h2>
+<div class="controls"><label>位置<select id="role"><option value="">全部</option><option value="0">上路</option><option value="1">打野</option><option value="2">中路</option><option value="3">下路</option><option value="4">輔助</option></select></label><label>版本<select id="version"></select></label><label>英雄<input id="hero" type="search" placeholder="Azir、Orianna"></label></div>
+<div class="scroll" id="matchups"></div>
+<p class="note">勝率為英雄 A 的整局勝率。Elo 預期使用當日前的隊伍結果。落差是實際勝率減預期勝率。位置對應登錄位置，資料可能受換線、陣容與隊伍差異影響。</p></section>
+<section><h2>當局物件與勝負</h2><div class="scroll" id="events"></div><p class="note">當局事件用於描述分析。賽前模型只使用歷史物件率。</p></section>
+<footer><a href="./sources.html">覆蓋範圍</a> · <a href="https://github.com/Chrouos/LOL_analysis/blob/main/analysis/feature_relationships.py">計算程式</a></footer>
+</main><script type="module" src="./relationships.mjs"></script></body></html>
