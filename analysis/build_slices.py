@@ -41,16 +41,19 @@ def build(path):
             outcomes.append({("1", "0"): 0, ("0", "1"): 1, ("0", "0"): 2}.get(pair, -1))
         sides = [index("teams", row["teamname"]) for row in (blue, red)]
         players = []
+        gold = {}
         for row in rows:
             role, player, hero = row["position"], row["playername"], row["champion"]
             if role in ROLES and player and hero:
-                players.extend((int(row["side"] == "Red") * 5 + ROLES.index(role),
-                                index("players", player), index("heroes", hero)))
-        games.append([day, blue["patch"], venue, *sides, *outcomes, players])
+                position = int(row["side"] == "Red") * 5 + ROLES.index(role)
+                players.extend((position, index("players", player), index("heroes", hero)))
+                if row.get("golddiffat15"):
+                    gold[position] = int(float(row["golddiffat15"]))
+        games.append([day, blue["patch"], venue, *sides, *outcomes, players, gold])
     return {"games": sorted(games), "regions": regions,
             **{group: list(values) for group, values in names.items()}}
 
 
 if __name__ == "__main__":
-    destination = Path(__file__).resolve().parents[1] / "dist" / "slices.json"
+    destination = Path(sys.argv[2]) if len(sys.argv) > 2 else Path(__file__).resolve().parents[1] / "dist" / "slices.json"
     destination.write_text(json.dumps(build(sys.argv[1]), separators=(",", ":"), ensure_ascii=False), encoding="utf-8")

@@ -9,7 +9,7 @@ function item(map, key, fallback) {
 export function summarize(snapshot, {start = '', end = '', patch = ''} = {}) {
   const observed = new Map(), teams = new Map(), players = new Map(), cross = new Map();
   let games = 0;
-  for (const [date, version, venue, blue, red, dragon, herald, baron, win, picks] of snapshot.games) {
+  for (const [date, version, venue, blue, red, dragon, herald, baron, win, picks, gold = {}] of snapshot.games) {
     if ((start && date < start) || (end && date > end) || (patch && patch !== version)) continue;
     games++;
     const outcomes = [dragon, herald, baron, win];
@@ -46,10 +46,19 @@ export function summarize(snapshot, {start = '', end = '', patch = ''} = {}) {
       const name = sides[side];
       const row = item(players, JSON.stringify([venue, name, player, role]), [venue, regions[side], name, player, role, 0, new Map()]);
       row[5]++;
-      row[6].set(hero, (row[6].get(hero) ?? 0) + 1);
+      const stat = item(row[6], hero, [hero, 0, 0, 0, 0, 0]);
+      stat[1]++;
+      if (win >= 0 && win < 2) {
+        stat[2] += Number(win === side);
+        stat[3]++;
+      }
+      if (Number.isFinite(gold[position])) {
+        stat[4] += gold[position];
+        stat[5]++;
+      }
     }
   }
   return {games, observed: [...observed.values()], teams: [...teams.values()].sort((a,b) => a[2].localeCompare(b[2])),
-    players: [...players.values()].map(row => [...row.slice(0, 6), [...row[6]].sort((a,b) => b[1] - a[1])]),
+    players: [...players.values()].map(row => [...row.slice(0, 6), [...row[6].values()].sort((a,b) => b[1] - a[1])]),
     cross: [...cross.values()].sort((a,b) => a.join().localeCompare(b.join()))};
 }

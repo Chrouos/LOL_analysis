@@ -149,6 +149,9 @@ function charts(data, includesTeam, query) {
       if (key) selectedPlayer = key;
       cards.forEach((button, i) => button.setAttribute('aria-pressed', String(playerKey(players[i]) === key)));
       showProfile(row);
+      table('player-hero-stats', ['英雄', '使用率', '選用後勝率', '平均 GD@15', 'GD@15 局數'],
+        row ? row[6].map(([hero, n, wins, results, gold, available]) => [hero, rate(n, row[5]),
+          rate(wins, results), available ? Math.round(gold / available) : '—', available]) : []);
       draw('player-chart', row ? [['使用率前八名', row[6].slice(0, 8).map(([hero, n]) => {
         const icon = championIcons[hero];
         return [hero, n, row[5], icon && 'https://ddragon.leagueoflegends.com/cdn/16.23.1/img/champion/' + icon];
@@ -257,9 +260,10 @@ function render(data) {
 }
 
 try {
-  const response = await fetch(el('patch') ? './slices.json' : './dashboard.json');
+  const seasonFile = () => el('season')?.value === '2025' ? './slices.json' : './slices-2026.json';
+  const response = await fetch(el('patch') ? seasonFile() : './dashboard.json');
   if (!response.ok) throw new Error('無法載入');
-  const snapshot = await response.json();
+  let snapshot = await response.json();
   let data = el('patch') ? summarize(snapshot) : snapshot;
   el('status').textContent = '';
   function updateOptions() {
@@ -274,6 +278,7 @@ try {
     const venue = el('venue').value;
     const eligible = snapshot.games.filter(row => !venue || row[2] === venue);
     options('patch', eligible.map(row => row[1]));
+    el('patch').options[0].textContent = '全部版本';
     const patch = el('patch').value;
     const start = el('start-date').value;
     const end = el('end-date').value;
@@ -294,6 +299,23 @@ try {
     el('clear-dates').onclick = () => {
       for (const id of ['patch', 'start-date', 'end-date']) el(id).value = '';
       applySlice();
+    };
+    let request = 0;
+    el('season').onchange = async () => {
+      const current = ++request;
+      el('status').textContent = '載入中';
+      try {
+        const next = await fetch(seasonFile());
+        if (!next.ok) throw new Error('讀取失敗');
+        const result = await next.json();
+        if (current !== request) return;
+        snapshot = result;
+        for (const id of ['patch', 'start-date', 'end-date']) el(id).value = '';
+        applySlice();
+        el('status').textContent = '';
+      } catch {
+        if (current === request) el('status').textContent = '賽季資料載入失敗，目前顯示先前載入的資料';
+      }
     };
     applySlice();
   } else updateOptions();
