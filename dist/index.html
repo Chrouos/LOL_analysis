@@ -1,29 +1,27 @@
 <!doctype html>
 <html lang="zh-Hant">
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>LCK Draft Lab</title>
+<title>LOL 賽事數據</title>
 <style>
-:root{color-scheme:dark;--bg:#101219;--panel:#191d28;--line:#303647;--ink:#f3f3f8;--muted:#a9b0c2;--lime:#d8fc71;--blue:#8eb6ff;--red:#ffa4ab}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,sans-serif}header{border-bottom:1px solid var(--line)}header div,main,footer{max-width:1330px;margin:auto;padding:20px 32px}header div{display:flex;align-items:center;justify-content:space-between;gap:12px}a{color:var(--lime)}h1{font-size:clamp(2.4rem,6vw,4.5rem);letter-spacing:-.06em;line-height:1;margin:15px 0;color:var(--lime)}h2{margin:0 0 12px;font-size:1.25rem}p{margin:8px 0;color:var(--muted)}.controls{display:flex;flex-wrap:wrap;gap:12px;margin:24px 0}label{display:grid;gap:5px;color:var(--muted);font-size:.875rem}input,select,button{font:inherit;color:inherit;background:#242a39;border:1px solid #414960;border-radius:7px;padding:8px 11px}button{cursor:pointer}button:hover:not(:disabled){border-color:var(--lime)}button:disabled{opacity:.45;cursor:default}button.primary{background:var(--lime);color:#161b0a;font-weight:750;border-color:var(--lime)}.layout{display:grid;grid-template-columns:1fr 1.45fr 1fr;gap:14px}.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;min-width:0}.sides{display:grid;grid-template-columns:1fr 1fr;gap:12px}.blue{color:var(--blue)}.red{color:var(--red)}ol,ul{padding-left:20px}.sides li{font-size:.9rem;padding:4px 0}.bar{height:5px;background:#33394b;border-radius:20px;margin:4px 0 10px}.bar span{display:block;height:100%;border-radius:inherit;background:var(--lime)}.row{display:flex;justify-content:space-between;gap:8px}.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(76px,1fr));gap:8px;max-height:390px;overflow:auto;padding:2px;margin-top:12px}.hero{display:grid;justify-items:center;gap:3px;padding:5px;font-size:.8rem;text-align:center}.hero img{width:38px;height:38px;border-radius:6px}.hero small{color:var(--muted)}.actions{display:flex;flex-wrap:wrap;gap:7px}.stats{margin-top:16px;overflow:auto}table{width:100%;border-collapse:collapse;text-align:left}th,td{padding:7px 10px;border-bottom:1px solid var(--line);white-space:nowrap}summary{cursor:pointer;color:var(--lime)}footer{color:var(--muted);font-size:.9rem}@media(max-width:950px){.layout{grid-template-columns:1fr 1fr}.pool{grid-column:1/-1;grid-row:2}}@media(max-width:560px){header div,main,footer{padding:14px}.layout{grid-template-columns:1fr}.pool{grid-column:auto;grid-row:auto}}
+:root{color-scheme:dark;--bg:#101219;--panel:#191d28;--line:#303647;--ink:#f3f3f8;--muted:#b2bace;--lime:#d8fc71}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,sans-serif}main,footer{max-width:1280px;margin:auto;padding:24px}h1{margin:4px 0;font-size:clamp(2rem,5vw,3.4rem);color:var(--lime)}h2{margin:0 0 12px;font-size:1.2rem}p,footer{color:var(--muted)}a{color:var(--lime)}.controls{display:flex;flex-wrap:wrap;gap:12px;margin:20px 0}label{display:grid;gap:4px;color:var(--muted);font-size:.875rem}select,input{font:inherit;color:var(--ink);background:#242a39;border:1px solid #414960;border-radius:6px;padding:7px 10px}section{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;margin:14px 0}.scroll{overflow:auto}table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;text-align:left}th,td{padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap}th{font-size:.875rem;color:var(--muted)}caption{text-align:left;color:var(--muted);padding-bottom:8px}.note{font-size:.875rem;margin:8px 0 0}@media(max-width:600px){main,footer{padding:14px}}
 </style>
-<header><div><strong>LCK Draft Lab</strong><a href="https://github.com/Chrouos/LOL_analysis">GitHub</a></div></header>
 <main>
-<h1>無懼選角工作台</h1>
-<p id="coverage">載入 LCK 比賽資料…</p>
+<h1>LOL 賽事數據</h1>
+<p>2025 賽季 · LCK／LPL／世界賽</p>
+<p id="status" role="status">載入中</p>
 <div class="controls">
-<label>藍方<select id="blue"></select></label><label>紅方<select id="red"></select></label>
-<label>先選方<select id="first"><option value="0">藍方</option><option value="1">紅方</option></select></label>
-<label>競賽版本<select id="patch"></select></label>
-<label>統計截止日<input id="date" type="date"></label>
+<label>比賽場域<select id="venue"><option value="">全部</option><option>LCK</option><option>LPL</option><option value="WLDs">世界賽</option></select></label>
+<label>隊伍賽區<select id="region"><option value="">全部</option></select></label>
+<label>隊伍<select id="team"><option value="">全部</option></select></label>
+<label>選手<input type="search" id="player" placeholder="搜尋 ID"></label>
 </div>
-<div class="layout">
-<section class="panel"><h2 id="turn" aria-live="polite">BP 順序</h2><div class="sides" id="board"></div><p id="locks"></p>
-<div class="actions"><button id="undo">上一步</button><button id="skip">略過 Ban</button><button class="primary" id="next">完成，進下一局</button><button id="reset">重設系列賽</button></div></section>
-<section class="panel pool"><h2>英雄池</h2><label>搜尋英雄<input id="search" type="search" placeholder="中文或英文名稱"></label><div id="pool" class="grid"></div></section>
-<section class="panel"><h2>下一手機率</h2><div id="forecast"></div><p id="sample"></p><details><summary>計分方式</summary><p>同手位頻率與隊伍偏好加權。近期資料半衰期 30 天，舊版按版本距離逐級折半。候選只含本手合法且在參考資料中已出賽的英雄，並以少量先驗平滑。</p></details></section>
-</div>
-<section class="panel stats"><h2>同版本英雄熱門度</h2><table><thead><tr><th>英雄</th><th>Pick</th><th>Ban</th><th>選出後勝率</th></tr></thead><tbody id="meta"></tbody></table></section>
-<section class="panel stats"><h2>隊伍紅藍方勝率</h2><table><thead><tr><th>隊伍</th><th>藍方</th><th>紅方</th></tr></thead><tbody id="teams"></tbody></table></section>
-</main><footer>選角資料 <a href="https://github.com/DeusExMachina1993/LoL-Draft">LoL-Draft</a>／<a href="https://lol.fandom.com/">Leaguepedia</a>，衍生資料採 <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>。英雄資料與圖示來自 <a href="https://developer.riotgames.com/docs/lol">Riot Data Dragon</a>。<br>非 Riot Games 官方網站。選角機率為統計基準，尚未經回測校準。</footer>
-<script type="module" src="./app.mjs"></script>
+<section><h2>賽前回測</h2><div class="scroll" id="backtest"></div><p class="note">4/1 起逐日回測，僅使用前一日及更早的資料。基準為同場域歷史結果頻率。模型加入隊伍、時間與版本權重。Log loss 越低越好。</p></section>
+<section><h2>場域物件分布</h2><div class="scroll" id="observed"></div></section>
+<section><h2>隊伍表現</h2><div class="scroll" id="teams"></div><p class="note">取得率以有紀錄局數為分母，包含未取得物件的對局。預示者在只有唯一取得方時可由總數推得。</p></section>
+<section><h2>選手英雄使用</h2><div class="scroll" id="players"></div><p class="note">依場域、隊伍與位置計算。顯示前五名，搜尋選手可查看完整英雄分布。</p></section>
+<section id="cross-section"><h2>世界賽賽區交手</h2><div class="scroll" id="cross"></div></section>
+</main>
+<footer>資料來源 <a href="https://github.com/cbplexiglass/LoL-Esports-Regional-Analyses/blob/main/2025_LoL_esports_match_data_from_OraclesElixir.csv">Oracle’s Elixir 2025 快照</a> · <a href="https://github.com/Chrouos/LOL_analysis">GitHub</a></footer>
+<script type="module" src="./dashboard.mjs"></script>
 </html>
