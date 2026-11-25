@@ -6,6 +6,7 @@ const pct = value => (100 * value).toFixed(1) + '%';
 const rate = (n, total) => total ? pct(n / total) + ' · ' + n + '/' + total : '—';
 
 function table(id, headers, rows) {
+  if (!el(id)) return;
   const node = document.createElement('table');
   const head = node.createTHead().insertRow();
   for (const label of headers) {
@@ -29,6 +30,7 @@ function table(id, headers, rows) {
 
 function options(id, values) {
   const select = el(id);
+  if (!select) return;
   const previous = select.value;
   select.replaceChildren(new Option('全部', ''), ...[...new Set(values)].sort().map(value => new Option(value, value)));
   if (values.includes(previous)) select.value = previous;
@@ -36,6 +38,7 @@ function options(id, values) {
 
 function draw(id, groups) {
   const container = el(id);
+  if (!container) return;
   container.replaceChildren();
   for (const [title, bars] of groups) {
     const group = document.createElement('div');
@@ -66,39 +69,66 @@ function draw(id, groups) {
   if (!groups.length) container.textContent = '沒有符合條件的資料';
 }
 
-function charts(data, includesVenue, includesTeam, query) {
-  const players = data.players.filter(row => includesTeam(row) && row[3].toLowerCase().includes(query));
-  const select = el('chart-player');
-  const prior = select.value;
-  const key = row => JSON.stringify(row.slice(0, 5));
-  select.replaceChildren(...players.map(row => new Option(row[3] + ' · ' + row[2] + ' · ' + venues[row[0]] + ' · ' + roles[row[4]], key(row))));
-  const chosen = players.find(row => key(row) === prior) ?? players.find(row => row[3] === 'Faker' && row[0] === 'LCK') ?? players[0];
-  if (chosen) select.value = key(chosen);
-  select.disabled = !chosen;
-  const showPlayer = () => {
-    const row = players.find(player => key(player) === select.value);
-    draw('player-chart', row ? [[row[5] + ' 局 · 使用率前八名', row[6].slice(0, 8).map(([hero, n]) => [hero, n, row[5]])]] : []);
-  };
-  select.onchange = showPlayer;
-  showPlayer();
+const portraits = {'T1/Faker': 'faker', 'Gen.G/Chovy': 'chovy', 'Bilibili Gaming/Knight': 'knight'};
 
+function showProfile(row) {
+  const profile = el('player-profile');
+  profile.replaceChildren();
+  if (!row) return;
+  const card = document.createElement('div');
+  card.className = 'player-card';
+  const frame = document.createElement('div');
+  frame.className = 'portrait-frame';
+  const initials = document.createElement('span');
+  initials.textContent = row[3].slice(0, 2).toUpperCase();
+  initials.setAttribute('aria-hidden', 'true');
+  frame.append(initials);
+  const asset = portraits[row[2] + '/' + row[3]];
+  if (asset) {
+    const img = document.createElement('img');
+    img.alt = row[3] + ' 選手照';
+    img.onerror = () => img.remove();
+    img.src = './assets/players/' + asset + '.webp';
+    frame.append(img);
+  }
+  const name = document.createElement('h3');
+  name.textContent = row[3];
+  const details = document.createElement('p');
+  details.textContent = row[2] + ' · ' + roles[row[4]] + ' · ' + row[5] + ' 局';
+  card.append(frame, name, details);
+  profile.append(card);
+}
+
+function charts(data, includesTeam, query) {
+  const select = el('chart-player');
+  if (select) {
+    const players = data.players.filter(row => includesTeam(row) && row[3].toLowerCase().includes(query));
+    const prior = select.value;
+    const key = row => JSON.stringify(row.slice(0, 5));
+    select.replaceChildren(...players.map(row => new Option(row[3] + ' · ' + row[2] + ' · ' + venues[row[0]] + ' · ' + roles[row[4]], key(row))));
+    const chosen = players.find(row => key(row) === prior) ?? players.find(row => row[3] === 'Faker' && row[0] === 'LCK') ?? players[0];
+    if (chosen) select.value = key(chosen);
+    select.disabled = !chosen;
+    const showPlayer = () => {
+      const row = players.find(player => key(player) === select.value);
+      showProfile(row);
+      draw('player-chart', row ? [['使用率前八名', row[6].slice(0, 8).map(([hero, n]) => [hero, n, row[5]])]] : []);
+    };
+    select.onchange = showPlayer;
+    showPlayer();
+  }
   draw('team-chart', data.teams.filter(includesTeam).sort((a, b) => b[3].games - a[3].games).slice(0, 3)
     .map(([venue, , team, counts]) => [team + ' · ' + venues[venue] + ' · ' + counts.games + ' 局',
       ['result', 'firstdragon', 'firstherald', 'firstbaron'].map(target =>
         [target === 'result' ? '勝率' : targets[target], counts[target], counts[target + '_n']])]));
 
-  const observed = new Map(data.observed.map(([venue, target, counts]) => [venue + target, counts]));
-  draw('venue-chart', Object.keys(venues).filter(includesVenue).map(venue => [venues[venue],
-    [['firstdragon', 1, '紅方首小龍'], ['firstherald', 0, '藍方首預示者'], ['firstbaron', 2, '無人拿巴龍']].map(([target, side, label]) => {
-      const counts = observed.get(venue + target);
-      return [label, counts[side], counts[0] + counts[1] + counts[2]];
-    })]));
 }
 
 function setupObjectiveComparison(observed) {
   const buttons = [...document.querySelectorAll('[data-objective]')];
   const show = target => {
     const container = el('objective-comparison');
+    if (!container) return;
     container.replaceChildren();
     const splits = new Map();
     for (const button of buttons) button.setAttribute('aria-pressed', String(button.dataset.objective === target));
@@ -155,12 +185,12 @@ function setupObjectiveComparison(observed) {
 
 function render(data) {
   const venue = el('venue').value;
-  const region = el('region').value;
-  const team = el('team').value;
-  const query = el('player').value.trim().toLowerCase();
+  const region = (el('region')?.value ?? '');
+  const team = (el('team')?.value ?? '');
+  const query = (el('player')?.value ?? '').trim().toLowerCase();
   const includesVenue = key => !venue || venue === key;
   const includesTeam = ([v, r, t]) => includesVenue(v) && (!region || region === r) && (!team || team === t);
-  charts(data, includesVenue, includesTeam, query);
+  charts(data, includesTeam, query);
   table('backtest', ['場域', '預測項目', '局數', '基準正確率', '模型正確率', '基準 Log loss', '模型 Log loss'],
     data.backtest.filter(([v]) => includesVenue(v)).map(([v, target, n, base, model]) =>
       [venues[v], targets[target], n, base ? pct(base[0]) : '—', model ? pct(model[0]) : '—',
@@ -178,7 +208,7 @@ function render(data) {
     data.players.filter(row => includesTeam(row) && row[3].toLowerCase().includes(query))
       .map(([v, r, t, p, role, n, picks]) => [venues[v], r, t, p, roles[role], n,
         (query ? picks : picks.slice(0, 5)).map(([hero, count]) => hero + ' ' + rate(count, n)).join(' ／ ')]));
-  el('cross-section').hidden = !includesVenue('WLDs');
+  if (el('cross-section')) el('cross-section').hidden = !includesVenue('WLDs');
   table('cross', ['賽區 A', '賽區 B', '項目', 'A 取得／獲勝', 'B 取得／獲勝', '無人取得', '缺資料'],
     data.cross.filter(([a, b]) => !region || a === region || b === region)
       .map(([a, b, target, counts, none, missing]) => [a, b, targets[target], a === b ? counts[0] + '（同賽區合計）' : counts[0], counts[1] ?? '—', none, missing]));
@@ -194,12 +224,14 @@ try {
     const venue = el('venue').value;
     const rows = data.teams.filter(([v]) => !venue || v === venue);
     options('region', rows.map(row => row[1]));
-    const region = el('region').value;
+    const region = (el('region')?.value ?? '');
     options('team', rows.filter(row => !region || row[1] === region).map(row => row[2]));
     render(data);
   }
-  el('venue').onchange = el('region').onchange = updateOptions;
-  el('team').onchange = el('player').oninput = () => render(data);
+  el('venue').onchange = updateOptions;
+  if (el('region')) el('region').onchange = updateOptions;
+  if (el('team')) el('team').onchange = () => render(data);
+  if (el('player')) el('player').oninput = () => render(data);
   updateOptions();
 } catch {
   el('status').textContent = '無法載入賽事資料';

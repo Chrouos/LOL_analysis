@@ -1,26 +1,12 @@
 <!doctype html>
 <html lang="zh-Hant">
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>LOL 賽事數據</title>
-<style>
-:root{color-scheme:dark;--bg:#101219;--panel:#191d28;--line:#303647;--ink:#f3f3f8;--muted:#b2bace;--lime:#d8fc71}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,sans-serif}main,footer{max-width:1280px;margin:auto;padding:24px}h1{margin:4px 0;font-size:clamp(2rem,5vw,3.4rem);color:var(--lime)}h2{margin:0 0 12px;font-size:1.2rem}p,footer{color:var(--muted)}a{color:var(--lime)}.controls{display:flex;flex-wrap:wrap;gap:12px;margin:20px 0}label{display:grid;gap:4px;color:var(--muted);font-size:.875rem}select,input{font:inherit;color:var(--ink);background:#242a39;border:1px solid #414960;border-radius:6px;padding:7px 10px}section{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;margin:14px 0}.scroll{overflow:auto}table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;text-align:left}th,td{padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap}th{font-size:.875rem;color:var(--muted)}caption{text-align:left;color:var(--muted);padding-bottom:8px}.note{font-size:.875rem;margin:8px 0 0}@media(max-width:600px){main,footer{padding:14px}}
-
-.chart-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.chart-grid section{margin:0}.chart-grid h2{margin-bottom:6px}.chart-context{color:var(--muted);font-size:.875rem;min-height:2.8rem;margin:0 0 10px}.chart-item{margin:0 0 11px}.chart-item strong{display:block;font-size:.9rem;overflow-wrap:anywhere}.chart-bar{display:grid;grid-template-columns:minmax(5.5rem,auto) minmax(30px,1fr) 3.9rem;align-items:center;gap:7px;font-size:.8rem;margin:4px 0}.chart-track{border-radius:4px;background:#303648;height:8px}.chart-track span{display:block;border-radius:4px;height:100%;background:var(--lime)}.chart-bar:nth-of-type(2) .chart-track span{background:#8bb6ff}.chart-bar:nth-of-type(3) .chart-track span{background:#e5afef}.chart-value{text-align:right;font-variant-numeric:tabular-nums}.chart-grid select{width:100%;margin:6px 0 10px}.analysis-title{margin:18px 0 10px}@media(max-width:950px){.chart-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:650px){.chart-grid{grid-template-columns:1fr}}
-
-.objective-layout{display:grid;grid-template-columns:minmax(245px,360px) minmax(0,1fr);gap:24px;align-items:start}.rift{position:relative;max-width:360px;aspect-ratio:1;background:#101219;border:1px solid var(--line);border-radius:10px;overflow:hidden}.rift>img{width:100%;height:100%;display:block}.pin,.objective-tabs button{cursor:pointer;color:var(--ink);border:1px solid #414960;background:#242a39;border-radius:8px;font:inherit}.pin{position:absolute;transform:translate(-50%,-50%);padding:3px;width:42px;height:42px;background:#101219dc}.pin img,.objective-tabs img{height:26px;width:26px;object-fit:contain;vertical-align:middle}.pin[aria-pressed=true],.objective-tabs button[aria-pressed=true]{border-color:var(--lime);background:#333d25}.objective-tabs{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}.objective-tabs button{padding:5px 8px;font-size:.875rem}.objective-tabs img{margin-right:5px}.split-group{margin:12px 0}.split-title,.split-labels{display:flex;justify-content:space-between;gap:8px}.split-title span,.split-labels{font-size:.78rem;color:var(--muted)}.split{height:14px;border-radius:4px;overflow:hidden;display:flex;background:#303648;margin:5px 0}.split span{display:block}.split .blue{background:#8bb6ff}.split .red{background:#ff9594}.split .none{background:#8690a8}.split-labels{flex-wrap:wrap}.difference{font-variant-numeric:tabular-nums;padding-top:9px;border-top:1px solid var(--line);font-size:.875rem}@media(max-width:720px){.objective-layout{grid-template-columns:1fr}.rift{width:100%;margin:auto}}
-</style>
-<main>
-<h1>LOL 賽事數據</h1>
-<p>2025 賽季 · LCK／LPL／世界賽</p>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>賽區分析 · LOL 賽事數據</title><link rel="stylesheet" href="./dashboard.css"></head>
+<body>
+<header class="site-header"><div><a class="brand" href="./index.html">LOL 賽事數據</a><nav class="nav" aria-label="主要導覽"><a href="./index.html" aria-current="page">賽區</a><a href="./players.html">選手</a><a href="./teams.html">隊伍</a><a href="./backtest.html">回測</a></nav></div></header>
+<main><div class="page-title"><p class="eyebrow">2025 賽季 · LCK／LPL／世界賽</p><h1>賽區分析</h1></div>
 <p id="status" role="status">載入中</p>
-<div class="controls">
-<label>比賽場域<select id="venue"><option value="">全部</option><option>LCK</option><option>LPL</option><option value="WLDs">世界賽</option></select></label>
-<label>隊伍賽區<select id="region"><option value="">全部</option></select></label>
-<label>隊伍<select id="team"><option value="">全部</option></select></label>
-<label>選手<input type="search" id="player" placeholder="搜尋 ID"></label>
-</div>
-<h2 class="analysis-title">賽事分析圖表</h2>
+<div class="controls"><label>比賽場域<select id="venue"><option value="">全部</option><option>LCK</option><option>LPL</option><option value="WLDs">世界賽</option></select></label></div>
 <section>
 <h2>召喚峽谷物件 · 賽區比較</h2>
 <div class="objective-layout">
@@ -41,17 +27,7 @@
 </div>
 </div>
 </section>
-<div class="chart-grid">
-<section><h2>選手英雄使用率</h2><label>圖表選手<select id="chart-player"></select></label><div id="player-chart"></div></section>
-<section><h2>隊伍勝率與物件取得率</h2><p class="chart-context">依篩選條件顯示出賽最多的三組隊伍／場域</p><div id="team-chart"></div></section>
-<section><h2>場域首物件分布</h2><p class="chart-context">各比例的分母為該物件有紀錄的局數</p><div id="venue-chart"></div></section>
-</div>
-<section><h2>場域物件分布</h2><div class="scroll" id="observed"></div></section>
-<section><h2>隊伍表現</h2><div class="scroll" id="teams"></div><p class="note">取得率以有紀錄局數為分母，包含未取得物件的對局。預示者在只有唯一取得方時可由總數推得。</p></section>
-<section><h2>選手英雄使用</h2><div class="scroll" id="players"></div><p class="note">依場域、隊伍與位置計算。顯示前五名，搜尋選手可查看完整英雄分布。</p></section>
-<section id="cross-section"><h2>世界賽賽區交手</h2><div class="scroll" id="cross"></div></section>
-<section><h2>賽前回測</h2><div class="scroll" id="backtest"></div><p class="note">4/1 起逐日回測，僅使用前一日及更早的資料。基準為同場域歷史結果頻率。模型加入隊伍、時間與版本權重。Log loss 越低越好。</p></section>
-</main>
-<footer>資料來源 <a href="https://github.com/cbplexiglass/LoL-Esports-Regional-Analyses/blob/main/2025_LoL_esports_match_data_from_OraclesElixir.csv">Oracle’s Elixir 2025 快照</a> · 地圖與圖示 © Riot Games，取自 <a href="https://raw.communitydragon.org/15.20/game/assets/">CommunityDragon</a> · <a href="https://github.com/Chrouos/LOL_analysis">GitHub</a></footer>
+<section><h2>場域物件分布</h2><div class="scroll" id="observed"></div></section><section id="cross-section"><h2>世界賽賽區交手</h2><div class="scroll" id="cross"></div></section>
+</main><footer>資料來源 <a href="https://github.com/cbplexiglass/LoL-Esports-Regional-Analyses/blob/main/2025_LoL_esports_match_data_from_OraclesElixir.csv">Oracle’s Elixir 2025 快照</a> · 地圖與圖示 © Riot Games，取自 <a href="https://raw.communitydragon.org/15.20/game/assets/">CommunityDragon</a> · <a href="https://github.com/Chrouos/LOL_analysis">GitHub</a></footer>
 <script type="module" src="./dashboard.mjs"></script>
-</html>
+</body></html>
