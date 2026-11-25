@@ -1,6 +1,6 @@
 import {championLocales} from './champion-locales.mjs';
 import {championIcons} from './champion-icons.mjs';
-import {duels, playerPool, draftRates} from './champion-stats.mjs';
+import {duels, duelComparison, playerPool, draftRates} from './champion-stats.mjs';
 
 const el = id => document.getElementById(id);
 let data, games;
@@ -129,8 +129,47 @@ function opponentOptions() {
   renderPicker('opponent');
   showDuel();
 }
+function drawComparison(filters) {
+  const root = el('duel-comparison');
+  root.replaceChildren();
+  const {gamesPlayed, wins, expected, covered, coveredWins} = duelComparison(games, filters);
+  if (!gamesPlayed) return;
+  function add(parent, tag, text, cls) {
+    const node = document.createElement(tag);
+    node.textContent = text;
+    if (cls) node.className = cls;
+    parent.append(node);
+    return node;
+  }
+  const title = add(root, 'div', '', 'duel-comparison-title');
+  const left = name(filters.hero), right = name(filters.opponent);
+  for (const [hero, label] of [[left, (filters.player >= 0 ? data.players[filters.player] + ' · ' : '') + left],
+                                [right, right || '所有對手']]) {
+    const chip = add(title, 'span', '', 'duel-champion');
+    const icon = hero && heroIcon(hero, 40);
+    if (icon) chip.append(icon);
+    chip.append(label);
+    if (hero === left) add(title, 'span', '對');
+  }
+  if (gamesPlayed < 10) add(root, 'p', '小樣本 · 未滿 10 局', 'duel-small');
+  const pct = p => (100 * p).toFixed(1) + '%';
+  const metrics = add(root, 'div', '', 'duel-metrics');
+  const difference = covered ? 100 * (coveredWins - expected) / covered : null;
+  for (const [label, value, note] of [
+    ['實際勝率', pct(wins / gamesPlayed), wins + ' 勝／' + gamesPlayed + ' 局'],
+    ['Elo 預期', covered ? pct(expected / covered) : '—', covered + ' 局有預期值'],
+    ['實際與預期差', difference === null ? '—' : (difference > 0 ? '+' : '') + difference.toFixed(1) + ' pp',
+     covered === gamesPlayed ? '同一批對局' : '僅比較有預期值的對局'],
+  ]) {
+    const box = add(metrics, 'div', '', 'duel-metric');
+    add(box, 'span', label); add(box, 'strong', value); add(box, 'small', note);
+  }
+  add(root, 'p', 'Elo 以當日前的隊伍戰績估計。差值可能受陣容、版本與選手影響。', 'note');
+}
 function showDuel() {
-  const stats = duels(games, {role:id('role'),hero:id('hero'),player:id('player'),opponent:id('opponent')});
+  const filters = {role:id('role'),hero:id('hero'),player:id('player'),opponent:id('opponent')};
+  const stats = duels(games, filters);
+  drawComparison(filters);
   chart('duel-chart',['對手英雄','英雄 A 整局勝率'], [...stats].sort((a,b)=>b[1][0]-a[1][0])
     .map(([hero,[n,w]])=>[hero,[w,n,'#a4dc85']]));
 }
@@ -163,9 +202,14 @@ async function load() {
   const token = ++request;
   el('coverage').textContent = '載入中';
   try {
-    const response = await fetch('./champions-'+el('season').value+'.json');
+    const year = el('season').value;
+    const [response, elo] = await Promise.all([
+      fetch('./champions-' + year + '.json'),
+      fetch('./duel-elo-' + year + '.json').then(r => r.ok ? r.json() : []).catch(() => []),
+    ]);
     if (!response.ok) throw new Error();
     const loaded = await response.json();
+    if (elo.length === loaded.games.length) loaded.games = loaded.games.map((game, i) => [...game, elo[i]]);
     if (token !== request) return;
     data = loaded;
     options('venue',[...new Set(data.games.map(g=>g[0]))].sort().map(v=>[v,v==='WLDs'?'世界賽':v]));

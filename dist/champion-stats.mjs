@@ -18,6 +18,27 @@ export function duels(games, {role, hero, player, opponent}) {
   return results;
 }
 
+export function duelComparison(games, filters) {
+  const {role, hero, player, opponent} = filters;
+  let gamesPlayed = 0, wins = 0, expected = 0, covered = 0, coveredWins = 0;
+  for (const [, , , , blueWin, picks, , blueProbability] of games) {
+    for (const side of [0, 1]) {
+      const own = picks[side * 5 + role], enemy = picks[(1 - side) * 5 + role];
+      if (!own || !enemy || own[1] !== hero || own[1] === enemy[1] ||
+          (player >= 0 && own[0] !== player) || (opponent >= 0 && enemy[1] !== opponent)) continue;
+      const won = Number(side === 0 ? blueWin : !blueWin);
+      gamesPlayed++;
+      wins += won;
+      if (Number.isFinite(blueProbability)) {
+        expected += side === 0 ? blueProbability : 1 - blueProbability;
+        covered++;
+        coveredWins += won;
+      }
+    }
+  }
+  return {gamesPlayed, wins, expected, covered, coveredWins};
+}
+
 export function playerPool(games, player) {
   const results = new Map();
   for (const [, , , , blueWin, picks] of games) {

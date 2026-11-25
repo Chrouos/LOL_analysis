@@ -36,3 +36,8 @@ body{background:radial-gradient(ellipse at top right,#1b273b 0%,#0d111b 47%);min
 .hero-option:focus-visible,.hero-selector summary:focus-visible{outline:2px solid var(--lime);outline-offset:1px}
 .hero-option span{overflow-wrap:anywhere}.hero-option-all{grid-column:1/-1;padding:7px}
 @media(max-width:560px){.hero-selectors{grid-template-columns:1fr}.hero-picker-grid{max-height:190px}}
+
+.duel-comparison:not(:empty){margin:0 0 16px;padding:14px;background:#101726;border:1px solid var(--line);border-radius:10px}
+.duel-comparison-title{display:flex;align-items:center;flex-wrap:wrap;gap:10px}.duel-champion{display:inline-flex;align-items:center;gap:7px;font-weight:700}.duel-champion img{border-radius:6px}
+.duel-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px}.duel-metric{display:grid;gap:3px;padding:9px;background:#1b2638;border-radius:7px;font-variant-numeric:tabular-nums}.duel-metric span,.duel-metric small{font-size:.8rem;color:var(--muted)}.duel-metric strong{font-size:clamp(1rem,3vw,1.45rem);color:var(--lime)}
+.duel-small{margin:8px 0 0;color:#ffca88;font-size:.88rem}
