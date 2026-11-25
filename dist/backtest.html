@@ -7,6 +7,17 @@
 <main><div class="page-title"><p class="eyebrow">2026／2025 賽季 · LCK／LPL／世界賽</p><h1>賽前回測</h1></div>
 <p id="status" role="status">載入中</p>
 <div class="controls"><label>賽季<select id="backtest-season"><option>2026</option><option>2025</option></select></label><label>比賽場域<select id="venue"><option value="">全部</option><option>LCK</option><option>LPL</option><option value="WLDs">世界賽</option></select></label></div>
+<section id="tuned-panel"><h2>單局勝負 · 2026 權重實驗</h2>
+<p class="note">用 2025 訓練、2026 年 1–3 月選參數，最後測試 4 月起的 341 局。</p>
+<div id="tuned-summary" role="status">載入中</div>
+<div class="scroll" id="tuned-comparison"></div>
+<details><summary>公式、權重與重現方式</summary>
+<div id="tuned-formula"></div><div class="scroll" id="tuned-weights"></div>
+<p>歷史對局權重 = 2<sup>−相隔天數 ÷ 半衰期</sup>。平滑率 =（2 ＋ 加權成功次數）÷（4 ＋ 加權有效局數）。</p>
+<p>Elo 初值 0。藍方預期勝率 E = 1 ÷（1 ＋ 10<sup>−Elo 差 ÷ 400</sup>）；每局調整量 = 24 ×（藍方實際結果 − E）。同日先預測，結束後整批更新。</p>
+<p>候選半衰期為 21、45、90 天，正則化 C 為 0.01、0.1、1。以驗證期 Log loss 選組合，平手才比較正確率。</p>
+<p><a href="https://github.com/Chrouos/LOL_analysis/blob/main/analysis/tune_win_model.py">計算程式</a></p>
+</details></section>
 <section><h2>回測結果</h2><div class="scroll" id="backtest"></div><p class="note">固定評估區間自所選賽季 4 月 1 日起至各場域收錄末日。逐日回測，僅使用前一日及更早的資料。基準為同場域歷史結果頻率。模型加入隊伍、時間與版本權重。Log loss 越低越好。</p></section>
 <section><h2>單局勝負 · 2026 特徵比較</h2>
 <p>測試為 2026-04-01 起的 341 局。各列依序加入特徵。訓練 1,560 局，對局特徵僅用當日以前的紀錄。</p>
@@ -14,4 +25,4 @@
 <p class="note">出賽選手版須知道先發，選角版須等 BP 完成。物件風格使用歷史首物件率。LPL 的首巴龍欄位缺資料。</p></section>
 </main><footer>資料來源 <a href="https://github.com/cbplexiglass/LoL-Esports-Regional-Analyses/blob/main/2025_LoL_esports_match_data_from_OraclesElixir.csv">Oracle’s Elixir 2025 快照</a> · 地圖與圖示 © Riot Games，取自 <a href="https://raw.communitydragon.org/15.20/game/assets/">CommunityDragon</a> · <a href="https://github.com/Chrouos/LOL_analysis">GitHub</a></footer>
 <script type="module" src="./dashboard.mjs?v=8"></script>
-<script type="module" src="./win-model.mjs"></script></body></html>
+<script type="module" src="./win-model.mjs"></script><script type="module" src="./tuned-win.mjs"></script></body></html>
