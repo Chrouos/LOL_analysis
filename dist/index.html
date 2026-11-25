@@ -1,11 +1,11 @@
 <!doctype html>
 <html lang="zh-Hant">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>賽區分析 · LOL 賽事數據</title><link rel="stylesheet" href="./dashboard.css?v=8"><style>main:has(#season option[value="2026"]:checked) #cross,main:has(#season option[value="2025"]:checked) #worlds-2026-summary{display:none}</style></head>
+<title>賽區分析 · LOL 賽事數據</title><link rel="stylesheet" href="./dashboard.css?v=11"><style>main:has(#season option[value="2026"]:checked) #cross,main:has(#season option[value="2025"]:checked) #worlds-2026-summary{display:none}</style></head>
 <body>
 <header class="site-header"><div><a class="brand" href="./index.html">LOL 賽事數據</a><nav class="nav" aria-label="主要導覽"><a href="./index.html" aria-current="page">賽區</a><a href="./teams.html">隊伍</a><a href="./players.html">選手</a><a href="./champions.html">英雄</a><a href="./worlds.html">世界賽</a><a href="./backtest.html">回測</a><a href="./sources.html">資料來源</a></nav></div></header>
 <main><div class="page-title"><p class="eyebrow">2026／2025 賽季 · LCK／LPL／世界賽</p><h1>賽區分析</h1></div>
-<nav class="nav" aria-label="常用分析"><a href="./champions.html#duels">查英雄對位</a><a href="./players.html">查選手英雄池</a><a href="./teams.html">查隊伍打法</a><a href="./worlds.html">查世界賽交手</a></nav>
+<nav class="quick-links" aria-label="常用分析"><a href="./champions.html#duels"><strong>英雄對位</strong><span>實際勝率、Elo 預期與樣本數</span></a><a href="./players.html"><strong>選手英雄池</strong><span>使用率、勝率與 GD@15</span></a><a href="./teams.html"><strong>隊伍打法</strong><span>紅藍方勝率與首物件</span></a><a href="./worlds.html"><strong>2026 世界賽</strong><span>賽區交手、正賽比分與決賽物件</span></a></nav>
 <p id="status" role="status">載入中</p>
 <div class="controls"><label>賽季<select id="season"><option value="2026">2026</option><option value="2025">2025</option></select></label><label>比賽場域<select id="venue"><option value="">全部</option><option>LCK</option><option>LPL</option><option value="WLDs">世界賽</option></select></label><label>競賽版本<select id="patch"><option value="">全部版本</option></select></label>
 <label>開始日<input type="date" id="start-date"></label><label>結束日<input type="date" id="end-date"></label>
