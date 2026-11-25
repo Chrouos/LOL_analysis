@@ -1,27 +1,21 @@
-# LCK Draft Lab
+# LOL 賽事數據
 
-LCK 無懼選角工作台。輸入每一步 Ban／Pick，即可查看下一手候選機率、同版本英雄熱門度與隊伍紅藍方勝率。
+[網站](https://lck-draft-analysis.oooouoa.chatgpt.site)涵蓋 2025 LCK、LPL 與世界賽。比賽場域和隊伍所屬賽區各自標記。包含逐日賽前回測、隊伍首物件取得率、紅藍方勝率和選手英雄使用率。
 
-## 執行
+## 重跑
+
+下載 [Oracle’s Elixir 2025 CSV 快照](https://github.com/cbplexiglass/LoL-Esports-Regional-Analyses/blob/main/2025_LoL_esports_match_data_from_OraclesElixir.csv)，SHA-256 為 `1adfa81d8ea54cd62b332d18f8a4089cb64331da448b11f0ff7084fac55ed406`。
 
 ```sh
+python analysis/backtest.py path/to/2025.csv
+python analysis/build_dashboard.py path/to/2025.csv
 python -m http.server --directory dist 8000
 ```
 
-開啟 http://localhost:8000。選好雙方隊伍及先選方後，依序點英雄完成一局。進下一局時，前面各局被選出的英雄會同時鎖定雙方，僅被 Ban 的英雄可再選。先選方可在每局開始前調整。
+## 指標
 
-## 更新資料
-
-```sh
-python prepare.py games.csv all_patches.inter champion.json
-```
-
-- [LoL-Draft v2026.08](https://github.com/DeusExMachina1993/LoL-Draft/tree/v2026.08/2026) 提供 `games.csv` 和 `all_patches/all_patches.inter`，匯入器只保留 2026 LCK 正賽與 LCK Cup。原始來源為 [Leaguepedia](https://lol.fandom.com/)。
-- [Riot Data Dragon 16.23.1 繁體中文英雄資料](https://ddragon.leagueoflegends.com/cdn/16.23.1/data/zh_TW/champion.json) 提供英雄資料。Data Dragon 的版本用於英雄目錄與圖示，競賽版本則使用逐局資料。
-- `dist/data.json` 篩選並正規化了上游資料。逐局和選角部分採 [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/)。Riot 英雄資料和圖示依 Riot 適用條款使用。程式碼採 MIT。
-
-## 統計
-
-候選分數使用相同出手順位的歷史紀錄，加上隊伍偏好（同隊乘 3）、時間半衰期 30 天、每隔一個資料中有觀測的競賽版本乘 0.5。截止日採 UTC 日期且不含當日。過濾不合法英雄後重新正規化。第一版機率尚未校準。
-
-後續依序補選手與對線資料、物件事件、時序回測和單局勝率。當前資料只包含選角與賽果。
+- 回測從 2025-04-01 起，同日資料整批留出。基準為同場域歷史結果頻率。模型加入雙方隊伍以往的結果。時間半衰期 60 天，每兩個小版本折半，跨場域權重 0.5。
+- 首物件以藍方、紅方、無人取得計分。缺標籤排除。首預示者可在兩隊合計至多一隻時由取得數推得。LPL 缺首巴龍標籤。
+- 把原始資料標為世界賽的 12 局 LPL 資格賽歸回 LPL。隊伍賽區按 2025 賽季登錄。
+- 選手英雄使用率以同場域、隊伍、位置出賽局數為分母。
+- MIT 適用程式碼。賽事統計來源為 Oracle’s Elixir。
