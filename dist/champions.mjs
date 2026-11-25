@@ -1,3 +1,4 @@
+import {championLocales} from './champion-locales.mjs';
 import {championIcons} from './champion-icons.mjs';
 import {duels, playerPool, draftRates} from './champion-stats.mjs';
 
@@ -13,6 +14,68 @@ function options(id, values, placeholder) {
 const id = key => el(key).value === '' ? -1 : Number(el(key).value);
 const ordered = (ids, names) => [...new Set(ids)].map(i => [i, names[i]]).sort((a,b) => a[1].localeCompare(b[1]));
 const name = hero => data.heroes[hero];
+const normalize = value => value.toLowerCase().normalize('NFKC').replace(/[^\p{L}\p{N}]/gu, '');
+function heroIcon(english, size) {
+  const file = championIcons[english];
+  if (!file) return null;
+  const img = document.createElement('img');
+  img.alt = ''; img.width = img.height = size;
+  img.loading = 'lazy';
+  img.src = 'https://ddragon.leagueoflegends.com/cdn/16.23.1/img/champion/' + file;
+  img.onerror = () => img.remove();
+  return img;
+}
+function localizedName(english) {
+  return championLocales[championIcons[english]?.replace(/\.png$/, '')] ?? [];
+}
+function renderPicker(key) {
+  const select = el(key);
+  const current = el(key + '-current');
+  current.replaceChildren();
+  const selected = select.selectedOptions[0];
+  if (selected) {
+    const english = selected.textContent;
+    const icon = heroIcon(english, 32);
+    if (icon) current.append(icon);
+    const [local] = localizedName(english);
+    current.append(local ? local + ' · ' + english : english);
+  } else current.textContent = '無可選英雄';
+  const filter = normalize(el(key + '-search').value);
+  const grid = el(key + '-grid');
+  grid.replaceChildren();
+  for (const option of select.options) {
+    const english = option.textContent;
+    const [local, title] = localizedName(english);
+    if (option.value && filter && ![english, local, title].some(name => name && normalize(name).includes(filter))) continue;
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'hero-option' + (option.value ? '' : ' hero-option-all');
+    button.setAttribute('aria-pressed', String(option.selected));
+    button.setAttribute('aria-label', local ? local + ' · ' + english : english);
+    if (local) button.title = english + (title ? ' · ' + title : '');
+    const icon = heroIcon(english, 36);
+    if (icon) button.append(icon);
+    const label = document.createElement('span');
+    label.textContent = local || english;
+    button.append(label);
+    button.onclick = () => {
+      select.value = option.value;
+      el(key + '-search').value = '';
+      el(key + '-picker').open = false;
+      select.onchange();
+      renderPicker(key);
+      el(key + '-picker').querySelector('summary').focus();
+    };
+    grid.append(button);
+  }
+  if (!grid.childElementCount || (filter && !grid.querySelector('button:not(.hero-option-all)'))) {
+    const message = document.createElement('span');
+    message.textContent = '沒有符合的英雄';
+    message.style.gridColumn = '1 / -1';
+    grid.append(message);
+  }
+}
+
 function bar(cell, n, total, color) {
   if (!total) { cell.textContent = '—'; return; }
   const value = (100 * n / total).toFixed(1) + '%';
@@ -36,13 +99,10 @@ function chart(target, labels, rows) {
   const body = table.createTBody();
   for (const [hero, ...values] of rows) {
     const row = body.insertRow(), cell = row.insertCell();
-    const icon = championIcons[name(hero)];
+    const icon = heroIcon(name(hero), 24);
     if (icon) {
-      const img = document.createElement('img');
-      img.alt = ''; img.loading = 'lazy'; img.width = img.height = 24;
-      img.style.cssText = 'vertical-align:middle;margin-right:8px;border-radius:4px';
-      img.src = 'https://ddragon.leagueoflegends.com/cdn/16.23.1/img/champion/' + icon;
-      cell.append(img);
+      icon.style.cssText = 'vertical-align:middle;margin-right:8px;border-radius:4px';
+      cell.append(icon);
     }
     cell.append(name(hero));
     values.forEach(([n,total,color]) => bar(row.insertCell(),n,total,color));
@@ -60,11 +120,13 @@ function heroOptions() {
   const eligible = games.flatMap(g => [g[5][role],g[5][role+5]])
     .filter(p => p && (player < 0 || p[0] === player));
   options('hero', ordered(eligible.map(p=>p[1]),data.heroes));
+  renderPicker('hero');
   opponentOptions();
 }
 function opponentOptions() {
   const stats = duels(games, {role:id('role'),hero:id('hero'),player:id('player'),opponent:-1});
   options('opponent', ordered(stats.keys(),data.heroes), '全部對手英雄');
+  renderPicker('opponent');
   showDuel();
 }
 function showDuel() {
@@ -79,8 +141,8 @@ function showPool() {
 }
 function showDraft() {
   const {byHero,pickGames,banGames} = draftRates(games);
-  const query = el('query').value.trim().toLowerCase();
-  const rates = [...byHero].filter(([h])=>name(h).toLowerCase().includes(query))
+  const query = normalize(el('query').value);
+  const rates = [...byHero].filter(([h])=>[name(h), ...localizedName(name(h))].some(label => normalize(label).includes(query)))
     .sort((a,b)=>(b[1][0]+b[1][1])-(a[1][0]+a[1][1]));
   chart('draft-chart',['英雄','Pick 率','Ban 率'],rates.map(([h,[picked,banned]])=>[h,[picked,pickGames,'#8bb6ff'],[banned,banGames,'#ff9594']]));
 }
@@ -113,4 +175,19 @@ async function load() {
 for (const [key,handler] of Object.entries({season:load,venue:venueChanged,stage:stageChanged,role:duelOptions,
   player:heroOptions,hero:opponentOptions,opponent:showDuel,'pool-player':showPool})) el(key).onchange=handler;
 el('query').oninput=showDraft;
+for (const key of ['hero', 'opponent']) {
+  const panel = el(key + '-picker');
+  const search = el(key + '-search');
+  search.oninput = () => renderPicker(key);
+  panel.ontoggle = () => {
+    if (!panel.open) return;
+    el((key === 'hero' ? 'opponent' : 'hero') + '-picker').open = false;
+    search.focus();
+  };
+  panel.onkeydown = event => {
+    if (event.key !== 'Escape' || !panel.open) return;
+    panel.open = false;
+    panel.querySelector('summary').focus();
+  };
+}
 load();

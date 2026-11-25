@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="zh-Hant">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>英雄分析 · LOL 賽事數據</title><link rel="stylesheet" href="./dashboard.css?v=8"></head>
+<title>英雄分析 · LOL 賽事數據</title><link rel="stylesheet" href="./dashboard.css?v=9"></head>
 <body>
 <header class="site-header"><div><a class="brand" href="./index.html">LOL 賽事數據</a><nav class="nav" aria-label="主要導覽"><a href="./index.html">賽區</a><a href="./players.html">選手</a><a href="./champions.html" aria-current="page">英雄</a><a href="./teams.html">隊伍</a><a href="./backtest.html">回測</a><a href="./worlds.html">世界賽</a><a href="./sources.html">資料來源</a></nav></div></header>
 <main><h1>英雄分析</h1>
@@ -15,10 +15,10 @@
 </nav>
 <section id="duels"><h2>英雄對位勝率</h2><div class="controls">
 <label>位置<select id="role"><option value="0">上路</option><option value="1">打野</option><option value="2" selected>中路</option><option value="3">下路</option><option value="4">輔助</option></select></label>
-<label>選手（可選）<select id="player"></select></label><label>英雄 A<select id="hero"></select></label><label>對手英雄<select id="opponent"></select></label></div>
+<label>選手（可選）<select id="player"></select></label></div><div class="hero-selectors"><details class="hero-selector" id="hero-picker"><summary aria-label="英雄 A"><span class="hero-picker-label">英雄 A</span><span id="hero-current" class="hero-picker-current">載入中</span></summary><div class="hero-picker-body"><label>搜尋英雄<input id="hero-search" type="search" autocomplete="off" placeholder="中文或英文名稱"></label><div id="hero-grid" class="hero-picker-grid" role="group" aria-label="英雄 A選項"></div></div><select id="hero" hidden aria-label="英雄 A"></select></details><details class="hero-selector" id="opponent-picker"><summary aria-label="對手英雄"><span class="hero-picker-label">對手英雄</span><span id="opponent-current" class="hero-picker-current">載入中</span></summary><div class="hero-picker-body"><label>搜尋英雄<input id="opponent-search" type="search" autocomplete="off" placeholder="中文或英文名稱"></label><div id="opponent-grid" class="hero-picker-grid" role="group" aria-label="對手英雄選項"></div></div><select id="opponent" hidden aria-label="對手英雄"></select></details></div>
 <div id="duel-chart" class="scroll"></div><p class="note">以隊伍整局勝負計算。選擇選手後只計該選手使用英雄 A 的對局，對位依登錄位置。</p></section>
 <section id="player-pool"><h2>選手英雄池</h2><div class="controls"><label>選手<select id="pool-player"></select></label></div><div id="pool-chart" class="scroll"></div></section>
-<section id="draft-rates"><h2>賽事 Ban／Pick 率</h2><div class="controls"><label>搜尋英雄<input id="query" type="search" placeholder="英雄名稱"></label></div>
+<section id="draft-rates"><h2>賽事 Ban／Pick 率</h2><div class="controls"><label>搜尋英雄<input id="query" type="search" placeholder="中文或英文名稱"></label></div>
 <div id="draft-chart" class="scroll"></div><p class="note">Ban 率以完整 10 個 Ban 欄位的對局為分母。Pick 率以 10 位出賽英雄都有紀錄的對局為分母。每個英雄每局最多計一次。</p></section>
 <p><a href="./sources.html">資料來源</a> · <a href="https://github.com/Chrouos/LOL_analysis/blob/main/analysis/build_champion_views.py">資料產製程式</a></p>
-</main><script type="module" src="./champions.mjs"></script></body></html>
+</main><script type="module" src="./champions.mjs?v=2"></script></body></html>
