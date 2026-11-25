@@ -1,3 +1,6 @@
+import {summarize} from './slices.mjs';
+import {championIcons} from './champion-icons.mjs';
+
 const el = id => document.getElementById(id);
 const venues = {LCK: 'LCK', LPL: 'LPL', WLDs: '世界賽'};
 const targets = {firstdragon: '首條小龍', firstherald: '首預示者', firstbaron: '首巴龍', result: '單局勝負'};
@@ -46,11 +49,22 @@ function draw(id, groups) {
     const heading = document.createElement('strong');
     heading.textContent = title;
     group.append(heading);
-    for (const [label, n, total] of bars) {
+    for (const [label, n, total, icon] of bars) {
       const row = document.createElement('div');
       row.className = 'chart-bar';
       const caption = document.createElement('span');
-      caption.textContent = label;
+      caption.className = 'bar-caption';
+      if (icon) {
+        const img = document.createElement('img');
+        img.src = icon;
+        img.alt = '';
+        img.width = img.height = 32;
+        img.onerror = () => img.remove();
+        caption.append(img);
+      }
+      const captionText = document.createElement('span');
+      captionText.textContent = label;
+      caption.append(captionText);
       const track = document.createElement('div');
       track.className = 'chart-track';
       track.setAttribute('aria-hidden', 'true');
@@ -69,14 +83,9 @@ function draw(id, groups) {
   if (!groups.length) container.textContent = '沒有符合條件的資料';
 }
 
-const portraits = {'T1/Faker': 'faker', 'Gen.G/Chovy': 'chovy', 'Bilibili Gaming/Knight': 'knight'};
+const portraits = {'T1/Faker': 'faker', 'T1/Keria': 'keria', 'Gen.G/Chovy': 'chovy', 'Bilibili Gaming/Knight': 'knight'};
 
-function showProfile(row) {
-  const profile = el('player-profile');
-  profile.replaceChildren();
-  if (!row) return;
-  const card = document.createElement('div');
-  card.className = 'player-card';
+function avatar(row) {
   const frame = document.createElement('div');
   frame.className = 'portrait-frame';
   const initials = document.createElement('span');
@@ -86,36 +95,66 @@ function showProfile(row) {
   const asset = portraits[row[2] + '/' + row[3]];
   if (asset) {
     const img = document.createElement('img');
-    img.alt = row[3] + ' 選手照';
+    img.alt = '';
+    img.loading = 'lazy';
     img.onerror = () => img.remove();
     img.src = './assets/players/' + asset + '.webp';
     frame.append(img);
   }
+  return frame;
+}
+
+function showProfile(row) {
+  const profile = el('player-profile');
+  profile.replaceChildren();
+  if (!row) return;
+  const card = document.createElement('div');
+  card.className = 'player-card';
   const name = document.createElement('h3');
   name.textContent = row[3];
   const details = document.createElement('p');
   details.textContent = row[2] + ' · ' + roles[row[4]] + ' · ' + row[5] + ' 局';
-  card.append(frame, name, details);
+  card.append(avatar(row), name, details);
   profile.append(card);
 }
 
+let selectedPlayer;
+const playerKey = row => JSON.stringify(row.slice(0, 5));
+
 function charts(data, includesTeam, query) {
-  const select = el('chart-player');
-  if (select) {
+  const picker = el('player-picker');
+  if (picker) {
     const players = data.players.filter(row => includesTeam(row) && row[3].toLowerCase().includes(query));
-    const prior = select.value;
-    const key = row => JSON.stringify(row.slice(0, 5));
-    select.replaceChildren(...players.map(row => new Option(row[3] + ' · ' + row[2] + ' · ' + venues[row[0]] + ' · ' + roles[row[4]], key(row))));
-    const chosen = players.find(row => key(row) === prior) ?? players.find(row => row[3] === 'Faker' && row[0] === 'LCK') ?? players[0];
-    if (chosen) select.value = key(chosen);
-    select.disabled = !chosen;
-    const showPlayer = () => {
-      const row = players.find(player => key(player) === select.value);
+    players.sort((a, b) => {
+      const hasPhoto = row => Boolean(portraits[row[2] + '/' + row[3]]);
+      return Number(hasPhoto(b)) - Number(hasPhoto(a)) || b[5] - a[5];
+    });
+    const chosen = players.find(row => playerKey(row) === selectedPlayer)
+      ?? players.find(row => row[3] === 'Faker' && row[0] === 'LCK') ?? players[0];
+    const cards = players.map(row => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'portrait-button';
+      const name = document.createElement('strong');
+      name.textContent = row[3];
+      const context = document.createElement('small');
+      context.textContent = row[2] + ' · ' + venues[row[0]] + ' · ' + roles[row[4]];
+      button.append(avatar(row), name, context);
+      button.onclick = () => select(row);
+      return button;
+    });
+    picker.replaceChildren(...cards);
+    function select(row) {
+      const key = row && playerKey(row);
+      if (key) selectedPlayer = key;
+      cards.forEach((button, i) => button.setAttribute('aria-pressed', String(playerKey(players[i]) === key)));
       showProfile(row);
-      draw('player-chart', row ? [['使用率前八名', row[6].slice(0, 8).map(([hero, n]) => [hero, n, row[5]])]] : []);
-    };
-    select.onchange = showPlayer;
-    showPlayer();
+      draw('player-chart', row ? [['使用率前八名', row[6].slice(0, 8).map(([hero, n]) => {
+        const icon = championIcons[hero];
+        return [hero, n, row[5], icon && 'https://ddragon.leagueoflegends.com/cdn/16.23.1/img/champion/' + icon];
+      })]] : []);
+    }
+    select(chosen);
   }
   draw('team-chart', data.teams.filter(includesTeam).sort((a, b) => b[3].games - a[3].games).slice(0, 3)
     .map(([venue, , team, counts]) => [team + ' · ' + venues[venue] + ' · ' + counts.games + ' 局',
@@ -124,16 +163,19 @@ function charts(data, includesTeam, query) {
 
 }
 
+let currentObjective = 'firstdragon';
+
 function setupObjectiveComparison(observed) {
   const buttons = [...document.querySelectorAll('[data-objective]')];
   const show = target => {
+    currentObjective = target;
     const container = el('objective-comparison');
     if (!container) return;
     container.replaceChildren();
     const splits = new Map();
     for (const button of buttons) button.setAttribute('aria-pressed', String(button.dataset.objective === target));
     for (const [venue, name] of Object.entries(venues)) {
-      const [, , counts] = observed.find(row => row[0] === venue && row[1] === target);
+      const counts = observed.find(row => row[0] === venue && row[1] === target)?.[2] ?? [0, 0, 0, 0];
       const [blue, red, none, missing] = counts;
       const total = blue + red + none;
       splits.set(venue, {total, blue, red, none});
@@ -144,7 +186,7 @@ function setupObjectiveComparison(observed) {
       const label = document.createElement('strong');
       label.textContent = name;
       const samples = document.createElement('span');
-      samples.textContent = total + ' 局有效' + (missing ? ' · ' + missing + ' 局缺資料' : '');
+      samples.textContent = total || missing ? total + ' 局有效' + (missing ? ' · ' + missing + ' 局缺資料' : '') : '區間內無對局';
       title.append(label, samples);
       group.append(title);
       if (total) {
@@ -180,7 +222,7 @@ function setupObjectiveComparison(observed) {
     container.append(difference);
   };
   for (const button of buttons) button.onclick = () => show(button.dataset.objective);
-  show('firstdragon');
+  show(currentObjective);
 }
 
 function render(data) {
@@ -192,7 +234,7 @@ function render(data) {
   const includesTeam = ([v, r, t]) => includesVenue(v) && (!region || region === r) && (!team || team === t);
   charts(data, includesTeam, query);
   table('backtest', ['場域', '預測項目', '局數', '基準正確率', '模型正確率', '基準 Log loss', '模型 Log loss'],
-    data.backtest.filter(([v]) => includesVenue(v)).map(([v, target, n, base, model]) =>
+    (data.backtest ?? []).filter(([v]) => includesVenue(v)).map(([v, target, n, base, model]) =>
       [venues[v], targets[target], n, base ? pct(base[0]) : '—', model ? pct(model[0]) : '—',
         base ? base[1].toFixed(3) : '—', model ? model[1].toFixed(3) : '—']));
   table('observed', ['場域', '物件', '藍方', '紅方', '無人取得', '缺資料'],
@@ -215,24 +257,46 @@ function render(data) {
 }
 
 try {
-  const response = await fetch('./dashboard.json');
-  if (!response.ok) throw new Error();
-  const data = await response.json();
-  setupObjectiveComparison(data.observed);
+  const response = await fetch(el('patch') ? './slices.json' : './dashboard.json');
+  if (!response.ok) throw new Error('無法載入');
+  const snapshot = await response.json();
+  let data = el('patch') ? summarize(snapshot) : snapshot;
   el('status').textContent = '';
   function updateOptions() {
     const venue = el('venue').value;
     const rows = data.teams.filter(([v]) => !venue || v === venue);
     options('region', rows.map(row => row[1]));
-    const region = (el('region')?.value ?? '');
+    const region = el('region')?.value ?? '';
     options('team', rows.filter(row => !region || row[1] === region).map(row => row[2]));
     render(data);
   }
-  el('venue').onchange = updateOptions;
+  function applySlice() {
+    const venue = el('venue').value;
+    const eligible = snapshot.games.filter(row => !venue || row[2] === venue);
+    options('patch', eligible.map(row => row[1]));
+    const patch = el('patch').value;
+    const start = el('start-date').value;
+    const end = el('end-date').value;
+    data = summarize(snapshot, {start, end, patch});
+    const filtered = eligible.filter(row => (!patch || row[1] === patch) && (!start || row[0] >= start) && (!end || row[0] <= end));
+    const dates = filtered.length ? filtered[0][0] + ' 至 ' + filtered.at(-1)[0] : '沒有符合日期的對局';
+    el('selected-scope').textContent = start && end && start > end ? '開始日須早於或等於結束日' :
+      dates + ' · ' + filtered.length + ' 局 · ' + (patch ? '競賽版本 ' + patch : '全部版本');
+    setupObjectiveComparison(data.observed);
+    updateOptions();
+  }
+  el('venue').onchange = el('patch') ? applySlice : updateOptions;
   if (el('region')) el('region').onchange = updateOptions;
   if (el('team')) el('team').onchange = () => render(data);
   if (el('player')) el('player').oninput = () => render(data);
-  updateOptions();
+  if (el('patch')) {
+    for (const id of ['patch', 'start-date', 'end-date']) el(id).onchange = applySlice;
+    el('clear-dates').onclick = () => {
+      for (const id of ['patch', 'start-date', 'end-date']) el(id).value = '';
+      applySlice();
+    };
+    applySlice();
+  } else updateOptions();
 } catch {
   el('status').textContent = '無法載入賽事資料';
 }

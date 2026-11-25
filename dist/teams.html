@@ -1,13 +1,16 @@
 <!doctype html>
 <html lang="zh-Hant">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>隊伍分析 · LOL 賽事數據</title><link rel="stylesheet" href="./dashboard.css"></head>
+<title>隊伍分析 · LOL 賽事數據</title><link rel="stylesheet" href="./dashboard.css?v=6"></head>
 <body>
-<header class="site-header"><div><a class="brand" href="./index.html">LOL 賽事數據</a><nav class="nav" aria-label="主要導覽"><a href="./index.html">賽區</a><a href="./players.html">選手</a><a href="./teams.html" aria-current="page">隊伍</a><a href="./backtest.html">回測</a></nav></div></header>
+<header class="site-header"><div><a class="brand" href="./index.html">LOL 賽事數據</a><nav class="nav" aria-label="主要導覽"><a href="./index.html">賽區</a><a href="./players.html">選手</a><a href="./teams.html" aria-current="page">隊伍</a><a href="./backtest.html">回測</a><a href="./sources.html">資料來源</a></nav></div></header>
 <main><div class="page-title"><p class="eyebrow">2025 賽季 · LCK／LPL／世界賽</p><h1>隊伍分析</h1></div>
 <p id="status" role="status">載入中</p>
-<div class="controls"><label>比賽場域<select id="venue"><option value="">全部</option><option>LCK</option><option>LPL</option><option value="WLDs">世界賽</option></select></label><label>隊伍賽區<select id="region"><option value="">全部</option></select></label><label>隊伍<select id="team"><option value="">全部</option></select></label></div>
+<div class="controls"><label>比賽場域<select id="venue"><option value="">全部</option><option>LCK</option><option>LPL</option><option value="WLDs">世界賽</option></select></label><label>隊伍賽區<select id="region"><option value="">全部</option></select></label><label>隊伍<select id="team"><option value="">全部</option></select></label><label>競賽版本<select id="patch"><option value="">全部版本</option></select></label>
+<label>開始日<input type="date" id="start-date"></label><label>結束日<input type="date" id="end-date"></label>
+<button type="button" class="clear-dates" id="clear-dates">清除版本與日期</button></div>
+<p class="scope" id="selected-scope" role="status"></p>
 <section class="team-bars"><h2>勝率與物件取得率</h2><p class="note">依篩選條件顯示出賽最多的三組隊伍／場域</p><div id="team-chart"></div></section><section><h2>隊伍表現</h2><div class="scroll" id="teams"></div><p class="note">取得率以有紀錄局數為分母，包含未取得物件的對局。預示者在只有唯一取得方時可由總數推得。</p></section>
 </main><footer>資料來源 <a href="https://github.com/cbplexiglass/LoL-Esports-Regional-Analyses/blob/main/2025_LoL_esports_match_data_from_OraclesElixir.csv">Oracle’s Elixir 2025 快照</a> · 地圖與圖示 © Riot Games，取自 <a href="https://raw.communitydragon.org/15.20/game/assets/">CommunityDragon</a> · <a href="https://github.com/Chrouos/LOL_analysis">GitHub</a></footer>
-<script type="module" src="./dashboard.mjs"></script>
+<script type="module" src="./dashboard.mjs?v=6"></script>
 </body></html>
