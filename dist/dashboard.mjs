@@ -34,6 +34,125 @@ function options(id, values) {
   if (values.includes(previous)) select.value = previous;
 }
 
+function draw(id, groups) {
+  const container = el(id);
+  container.replaceChildren();
+  for (const [title, bars] of groups) {
+    const group = document.createElement('div');
+    group.className = 'chart-item';
+    const heading = document.createElement('strong');
+    heading.textContent = title;
+    group.append(heading);
+    for (const [label, n, total] of bars) {
+      const row = document.createElement('div');
+      row.className = 'chart-bar';
+      const caption = document.createElement('span');
+      caption.textContent = label;
+      const track = document.createElement('div');
+      track.className = 'chart-track';
+      track.setAttribute('aria-hidden', 'true');
+      const fill = document.createElement('span');
+      fill.style.width = total ? pct(n / total) : '0%';
+      track.append(fill);
+      const value = document.createElement('span');
+      value.className = 'chart-value';
+      value.textContent = total ? pct(n / total) : '—';
+      value.title = total ? n + '/' + total : '缺資料';
+      row.append(caption, track, value);
+      group.append(row);
+    }
+    container.append(group);
+  }
+  if (!groups.length) container.textContent = '沒有符合條件的資料';
+}
+
+function charts(data, includesVenue, includesTeam, query) {
+  const players = data.players.filter(row => includesTeam(row) && row[3].toLowerCase().includes(query));
+  const select = el('chart-player');
+  const prior = select.value;
+  const key = row => JSON.stringify(row.slice(0, 5));
+  select.replaceChildren(...players.map(row => new Option(row[3] + ' · ' + row[2] + ' · ' + venues[row[0]] + ' · ' + roles[row[4]], key(row))));
+  const chosen = players.find(row => key(row) === prior) ?? players.find(row => row[3] === 'Faker' && row[0] === 'LCK') ?? players[0];
+  if (chosen) select.value = key(chosen);
+  select.disabled = !chosen;
+  const showPlayer = () => {
+    const row = players.find(player => key(player) === select.value);
+    draw('player-chart', row ? [[row[5] + ' 局 · 使用率前八名', row[6].slice(0, 8).map(([hero, n]) => [hero, n, row[5]])]] : []);
+  };
+  select.onchange = showPlayer;
+  showPlayer();
+
+  draw('team-chart', data.teams.filter(includesTeam).sort((a, b) => b[3].games - a[3].games).slice(0, 3)
+    .map(([venue, , team, counts]) => [team + ' · ' + venues[venue] + ' · ' + counts.games + ' 局',
+      ['result', 'firstdragon', 'firstherald', 'firstbaron'].map(target =>
+        [target === 'result' ? '勝率' : targets[target], counts[target], counts[target + '_n']])]));
+
+  const observed = new Map(data.observed.map(([venue, target, counts]) => [venue + target, counts]));
+  draw('venue-chart', Object.keys(venues).filter(includesVenue).map(venue => [venues[venue],
+    [['firstdragon', 1, '紅方首小龍'], ['firstherald', 0, '藍方首預示者'], ['firstbaron', 2, '無人拿巴龍']].map(([target, side, label]) => {
+      const counts = observed.get(venue + target);
+      return [label, counts[side], counts[0] + counts[1] + counts[2]];
+    })]));
+}
+
+function setupObjectiveComparison(observed) {
+  const buttons = [...document.querySelectorAll('[data-objective]')];
+  const show = target => {
+    const container = el('objective-comparison');
+    container.replaceChildren();
+    const splits = new Map();
+    for (const button of buttons) button.setAttribute('aria-pressed', String(button.dataset.objective === target));
+    for (const [venue, name] of Object.entries(venues)) {
+      const [, , counts] = observed.find(row => row[0] === venue && row[1] === target);
+      const [blue, red, none, missing] = counts;
+      const total = blue + red + none;
+      splits.set(venue, {total, blue, red, none});
+      const group = document.createElement('div');
+      group.className = 'split-group';
+      const title = document.createElement('div');
+      title.className = 'split-title';
+      const label = document.createElement('strong');
+      label.textContent = name;
+      const samples = document.createElement('span');
+      samples.textContent = total + ' 局有效' + (missing ? ' · ' + missing + ' 局缺資料' : '');
+      title.append(label, samples);
+      group.append(title);
+      if (total) {
+        const bar = document.createElement('div');
+        bar.className = 'split';
+        bar.setAttribute('aria-hidden', 'true');
+        const labels = document.createElement('div');
+        labels.className = 'split-labels';
+        for (const [css, side, n] of [['blue', '藍方', blue], ['red', '紅方', red], ['none', '無人取得', none]]) {
+          const segment = document.createElement('span');
+          segment.className = css;
+          segment.style.width = 100 * n / total + '%';
+          bar.append(segment);
+          const detail = document.createElement('span');
+          detail.textContent = side + ' ' + pct(n / total) + '（' + n + '/' + total + '）';
+          labels.append(detail);
+        }
+        group.append(bar, labels);
+      }
+      container.append(group);
+    }
+    const lck = splits.get('LCK');
+    const lpl = splits.get('LPL');
+    const difference = document.createElement('p');
+    difference.className = 'difference';
+    if (lck.total && lpl.total) {
+      const delta = side => {
+        const n = 100 * (lck[side] / lck.total - lpl[side] / lpl.total);
+        return (n > 0 ? '+' : '') + n.toFixed(1) + ' 個百分點';
+      };
+      difference.textContent = 'LCK 相對 LPL · 藍方 ' + delta('blue') + ' ／ 紅方 ' + delta('red') + ' ／ 無人取得 ' + delta('none');
+    } else difference.textContent = 'LCK 與 LPL 差值 · 缺資料';
+    container.append(difference);
+  };
+  for (const button of buttons) button.onclick = () => show(button.dataset.objective);
+  show('firstdragon');
+}
+
 function render(data) {
   const venue = el('venue').value;
   const region = el('region').value;
@@ -41,6 +160,7 @@ function render(data) {
   const query = el('player').value.trim().toLowerCase();
   const includesVenue = key => !venue || venue === key;
   const includesTeam = ([v, r, t]) => includesVenue(v) && (!region || region === r) && (!team || team === t);
+  charts(data, includesVenue, includesTeam, query);
   table('backtest', ['場域', '預測項目', '局數', '基準正確率', '模型正確率', '基準 Log loss', '模型 Log loss'],
     data.backtest.filter(([v]) => includesVenue(v)).map(([v, target, n, base, model]) =>
       [venues[v], targets[target], n, base ? pct(base[0]) : '—', model ? pct(model[0]) : '—',
@@ -68,6 +188,7 @@ try {
   const response = await fetch('./dashboard.json');
   if (!response.ok) throw new Error();
   const data = await response.json();
+  setupObjectiveComparison(data.observed);
   el('status').textContent = '';
   function updateOptions() {
     const venue = el('venue').value;
