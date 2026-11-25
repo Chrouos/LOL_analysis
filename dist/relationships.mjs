@@ -1,31 +1,20 @@
+import {renderTable} from './ui.mjs';
+
 const el = id => document.getElementById(id);
 const roles = ['上路','打野','中路','下路','輔助'];
 const objectives = ['首小龍','首預示者','首巴龍'];
 const pct = ratio => (100 * ratio).toFixed(1) + '%';
 function table(id, headers, rows, colors = false) {
-  const t = document.createElement('table');
-  const head = t.createTHead().insertRow();
-  headers.forEach(label => {
-    const th = document.createElement('th');
-    th.scope = 'col'; th.textContent = label; head.append(th);
+  renderTable(id, headers, rows, {
+    rowHeader: true,
+    empty: '這組篩選沒有至少 2 局的對位。',
+    cell(target, value, index) {
+      if (!colors || index === 0 || value == null) return;
+      target.textContent = value.toFixed(2);
+      target.style.background = value >= 0 ? 'rgba(66,166,218,' + Math.abs(value) * .55 + ')' :
+        'rgba(242,124,94,' + Math.abs(value) * .55 + ')';
+    },
   });
-  const body = t.createTBody();
-  for (const [first, ...values] of rows) {
-    const tr = body.insertRow();
-    const th = document.createElement('th');
-    th.scope = 'row'; th.textContent = first; tr.append(th);
-    for (const value of values) {
-      const cell = tr.insertCell();
-      cell.textContent = value ?? '—';
-      if (colors && value !== null) {
-        cell.textContent = value.toFixed(2);
-        cell.style.background = value >= 0 ? 'rgba(66,166,218,' + Math.abs(value) * .55 + ')' :
-          'rgba(242,124,94,' + Math.abs(value) * .55 + ')';
-      }
-    }
-  }
-  el(id).replaceChildren(t);
-  if (!rows.length) el(id).textContent = '這組篩選沒有至少 2 局的對位。';
 }
 try {
   const response = await fetch('./feature-relationships.json');

@@ -47,3 +47,26 @@ body{background:radial-gradient(ellipse at top right,#1b273b 0%,#0d111b 47%);min
 .quick-links>a:hover,.quick-links>a:focus-visible{border-color:var(--lime)}
 .quick-links span{color:var(--muted);font-size:.85rem}
 .backtest-results strong{color:var(--lime);font-size:1.55rem;font-variant-numeric:tabular-nums;line-height:1.15}
+
+/* Shared focus, navigation and data feedback. */
+:root{--motion-fast:140ms;--motion-chart:230ms}
+:focus-visible{outline:2px solid var(--lime);outline-offset:3px}
+section[id]{scroll-margin-top:1rem}
+.site-header .nav a[aria-current]{background:linear-gradient(0deg,#bff47912,transparent)}
+.controls :is(select,input):focus-visible{border-color:var(--lime)}
+.data-table th,.data-table td{font-variant-numeric:tabular-nums}
+.data-table tbody th{color:var(--ink);font-weight:600}
+.data-table tbody tr:nth-child(even){background:#ffffff05}
+.data-table tbody tr:hover{background:#8bb6ff12}
+.data-table .empty-cell{color:var(--muted);padding:14px 10px}
+.table-champion-icon{vertical-align:middle;margin-right:8px;border-radius:4px}
+@keyframes chart-fill{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@media(prefers-reduced-motion:no-preference){
+ .quick-links>a,.hero-option,.portrait-button,.site-header .nav a{transition:background-color var(--motion-fast),border-color var(--motion-fast),color var(--motion-fast)}
+ .chart-track span,.split span{transform-origin:left;animation:chart-fill var(--motion-chart) ease-out both}
+}
+@media(max-width:560px){
+ .site-header .nav{flex-wrap:nowrap;overflow-x:auto;width:100%;scrollbar-width:thin}
+ .site-header .nav a{flex:none;white-space:nowrap}
+ .site-header .nav a:focus-visible{outline-offset:-3px}
+}

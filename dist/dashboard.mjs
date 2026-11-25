@@ -1,3 +1,4 @@
+import {renderTable as table} from './ui.mjs';
 import {summarize} from './slices.mjs';
 import {championIcons} from './champion-icons.mjs';
 
@@ -7,29 +8,6 @@ const targets = {firstdragon: '首條小龍', firstherald: '首預示者', first
 const roles = {top: '上路', jng: '打野', mid: '中路', bot: '下路', sup: '輔助'};
 const pct = value => (100 * value).toFixed(1) + '%';
 const rate = (n, total) => total ? pct(n / total) + ' · ' + n + '/' + total : '—';
-
-function table(id, headers, rows) {
-  if (!el(id)) return;
-  const node = document.createElement('table');
-  const head = node.createTHead().insertRow();
-  for (const label of headers) {
-    const th = document.createElement('th');
-    th.scope = 'col';
-    th.textContent = label;
-    head.append(th);
-  }
-  const body = node.createTBody();
-  for (const row of rows) {
-    const tr = body.insertRow();
-    for (const value of row) tr.insertCell().textContent = value;
-  }
-  el(id).replaceChildren(node);
-  if (!rows.length) {
-    const cell = body.insertRow().insertCell();
-    cell.colSpan = headers.length;
-    cell.textContent = '沒有符合條件的資料';
-  }
-}
 
 function options(id, values) {
   const select = el(id);

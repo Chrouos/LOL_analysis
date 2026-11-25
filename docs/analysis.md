@@ -40,3 +40,9 @@ python -B analysis/build_slices.py /path/to/2026.csv dist/slices-2026.json
 python -B analysis/build_champion_views.py 2026 /path/to/2026.csv
 python -B analysis/build_duel_elo.py
 ```
+
+## 頁面共用元件
+
+- `dist/ui.mjs` 提供表格結構、欄列標題、空狀態和自訂儲存格。各頁模組負責查詢、資料整理與欄位順序。
+- `dist/dashboard.css` 管理共用視覺、鍵盤焦點和圖表動效。系統偏好減少動態效果時停用動畫。
+- 導覽集中在 `scripts/sync_navigation.py`，修改後執行 `python -B scripts/sync_navigation.py` 更新靜態頁面。以 `--check` 確認產物同步。

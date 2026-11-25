@@ -1,3 +1,5 @@
+import {renderTable as display} from './ui.mjs';
+
 const teams = {
   'Gen.G': 'LCK', 'T1': 'LCK', 'Hanwha Life Esports': 'LCK', 'Dplus KIA': 'LCK',
   'Bilibili Gaming': 'LPL', 'Invictus Gaming': 'LPL', 'Top Esports': 'LPL', 'Anyone s Legend': 'LPL',
@@ -7,21 +9,6 @@ const teams = {
 };
 const label = name => name === 'Anyone s Legend' ? "Anyone’s Legend" : name;
 const scope = document.getElementById('worlds-scope');
-
-function display(id, headers, rows) {
-  const table = document.createElement('table');
-  const head = table.createTHead().insertRow();
-  for (const name of headers) {
-    const th = document.createElement('th');
-    th.scope = 'col'; th.textContent = name; head.append(th);
-  }
-  const body = table.createTBody();
-  for (const values of rows) {
-    const row = body.insertRow();
-    for (const value of values) row.insertCell().textContent = value;
-  }
-  document.getElementById(id).replaceChildren(table);
-}
 
 try {
   const response = await fetch('./worlds-2026-series.json');

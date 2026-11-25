@@ -1,3 +1,4 @@
+import {renderTable} from './ui.mjs';
 import {championLocales} from './champion-locales.mjs';
 import {championIcons} from './champion-icons.mjs';
 import {duels, duelComparison, playerPool, draftRates} from './champion-stats.mjs';
@@ -87,27 +88,22 @@ function bar(cell, n, total, color) {
   cell.append(meter);
 }
 function chart(target, labels, rows) {
-  const root = el(target);
-  root.replaceChildren();
-  if (!rows.length) { root.textContent = '此篩選範圍沒有對局。'; return; }
-  const table = document.createElement('table');
-  const head = table.createTHead().insertRow();
-  for (const text of labels) {
-    const th = document.createElement('th');
-    th.scope = 'col'; th.textContent = text; head.append(th);
-  }
-  const body = table.createTBody();
-  for (const [hero, ...values] of rows) {
-    const row = body.insertRow(), cell = row.insertCell();
-    const icon = heroIcon(name(hero), 24);
-    if (icon) {
-      icon.style.cssText = 'vertical-align:middle;margin-right:8px;border-radius:4px';
-      cell.append(icon);
-    }
-    cell.append(name(hero));
-    values.forEach(([n,total,color]) => bar(row.insertCell(),n,total,color));
-  }
-  root.append(table);
+  renderTable(target, labels, rows, {
+    empty: '此篩選範圍沒有對局。',
+    cell(cell, value, index) {
+      cell.replaceChildren();
+      if (index > 0) {
+        bar(cell, ...value);
+        return;
+      }
+      const icon = heroIcon(name(value), 24);
+      if (icon) {
+        icon.className = 'table-champion-icon';
+        cell.append(icon);
+      }
+      cell.append(name(value));
+    },
+  });
 }
 function duelOptions() {
   const role = id('role');

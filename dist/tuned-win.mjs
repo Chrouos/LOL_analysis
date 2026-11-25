@@ -1,20 +1,11 @@
+import {renderTable as table} from './ui.mjs';
+
 const get = id => document.getElementById(id);
 function element(tag, text, parent) {
   const node = document.createElement(tag);
   node.textContent = text;
   parent.append(node);
   return node;
-}
-function table(id, labels, values) {
-  const root = get(id);
-  const node = element('table', '', root);
-  const headings = node.createTHead().insertRow();
-  labels.forEach(label => { element('th', label, headings).scope = 'col'; });
-  const body = node.createTBody();
-  for (const valuesRow of values) {
-    const row = body.insertRow();
-    valuesRow.forEach(value => element('td', value, row));
-  }
 }
 const pct = rate => (100 * rate).toFixed(1) + '%';
 try {
