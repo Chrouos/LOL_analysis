@@ -51,7 +51,7 @@ def load(path):
     return sorted(games, key=lambda game: game[0]), regions
 
 
-def evaluate(games, regions):
+def evaluate(games, regions, start_date=date(2025, 4, 1)):
     history = []
     scores = defaultdict(list)
     observed = defaultdict(Counter)
@@ -65,7 +65,7 @@ def evaluate(games, regions):
                     matchup = tuple(sorted(regions[team] for team in teams))
                     winner = regions[teams[actual]] if actual in (0, 1) else actual
                     cross[matchup, target][winner] += 1
-                if actual is None or day < date(2025, 4, 1):
+                if actual is None or day < start_date:
                     continue
                 # Predict default side/none from the same venue as a baseline.
                 same_venue = [g for g in history if g[2] == venue and g[4][target] is not None]

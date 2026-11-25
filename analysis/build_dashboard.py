@@ -2,15 +2,16 @@
 import csv
 import json
 import sys
+from datetime import date
 from collections import Counter, defaultdict
 from pathlib import Path
 
 from backtest import TARGETS, evaluate, load, metrics
 
 
-def build(path):
+def build(path, start_date=date(2025, 4, 1)):
     games, regions = load(path)
-    scores, observed, cross = evaluate(games, regions)
+    scores, observed, cross = evaluate(games, regions, start_date)
     teams = defaultdict(Counter)
     players = defaultdict(Counter)
     for _, _, venue, sides, outcomes in games:
@@ -47,6 +48,6 @@ def build(path):
 
 
 if __name__ == "__main__":
-    result = build(sys.argv[1])
-    output = Path(__file__).resolve().parents[1] / "dist" / "dashboard.json"
+    result = build(sys.argv[1], date.fromisoformat(sys.argv[3])) if len(sys.argv) > 3 else build(sys.argv[1])
+    output = Path(sys.argv[2]) if len(sys.argv) > 2 else Path(__file__).resolve().parents[1] / "dist" / "dashboard.json"
     output.write_text(json.dumps(result, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")

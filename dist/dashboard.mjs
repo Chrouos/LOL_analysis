@@ -159,7 +159,7 @@ function charts(data, includesTeam, query) {
     }
     select(chosen);
   }
-  draw('team-chart', data.teams.filter(includesTeam).sort((a, b) => b[3].games - a[3].games).slice(0, 3)
+  draw('team-chart', (data.teams ?? []).filter(includesTeam).sort((a, b) => b[3].games - a[3].games).slice(0, 3)
     .map(([venue, , team, counts]) => [team + ' · ' + venues[venue] + ' · ' + counts.games + ' 局',
       ['result', 'firstdragon', 'firstherald', 'firstbaron'].map(target =>
         [target === 'result' ? '勝率' : targets[target], counts[target], counts[target + '_n']])]));
@@ -241,34 +241,34 @@ function render(data) {
       [venues[v], targets[target], n, base ? pct(base[0]) : '—', model ? pct(model[0]) : '—',
         base ? base[1].toFixed(3) : '—', model ? model[1].toFixed(3) : '—']));
   table('observed', ['場域', '物件', '藍方', '紅方', '無人取得', '缺資料'],
-    data.observed.filter(([v, target]) => includesVenue(v) && target !== 'result').map(([v, target, [blue, red, none, missing]]) => {
+    (data.observed ?? []).filter(([v, target]) => includesVenue(v) && target !== 'result').map(([v, target, [blue, red, none, missing]]) => {
       const total = blue + red + none;
       return [venues[v], targets[target], rate(blue, total), rate(red, total), rate(none, total), missing];
     }));
   table('teams', ['場域', '隊伍賽區', '隊伍', '局數', '勝率', '藍方勝率', '紅方勝率', '首條小龍', '首預示者', '首巴龍'],
-    data.teams.filter(includesTeam).map(([v, r, t, c]) => [venues[v], r, t, c.games,
+    (data.teams ?? []).filter(includesTeam).map(([v, r, t, c]) => [venues[v], r, t, c.games,
       rate(c.result, c.result_n), rate(c.blue_wins ?? 0, c.blue), rate(c.red_wins ?? 0, c.red),
       ...['firstdragon', 'firstherald', 'firstbaron'].map(key => rate(c[key], c[key + '_n']))]));
   table('players', ['場域', '隊伍賽區', '隊伍', '選手', '位置', '局數', '英雄與使用率'],
-    data.players.filter(row => includesTeam(row) && row[3].toLowerCase().includes(query))
+    (data.players ?? []).filter(row => includesTeam(row) && row[3].toLowerCase().includes(query))
       .map(([v, r, t, p, role, n, picks]) => [venues[v], r, t, p, roles[role], n,
         (query ? picks : picks.slice(0, 5)).map(([hero, count]) => hero + ' ' + rate(count, n)).join(' ／ ')]));
   if (el('cross-section')) el('cross-section').hidden = !includesVenue('WLDs');
   table('cross', ['賽區 A', '賽區 B', '項目', 'A 取得／獲勝', 'B 取得／獲勝', '無人取得', '缺資料'],
-    data.cross.filter(([a, b]) => !region || a === region || b === region)
+    (data.cross ?? []).filter(([a, b]) => !region || a === region || b === region)
       .map(([a, b, target, counts, none, missing]) => [a, b, targets[target], a === b ? counts[0] + '（同賽區合計）' : counts[0], counts[1] ?? '—', none, missing]));
 }
 
 try {
   const seasonFile = () => el('season')?.value === '2025' ? './slices.json' : './slices-2026.json';
-  const response = await fetch(el('patch') ? seasonFile() : './dashboard.json');
+  const response = await fetch(el('patch') ? seasonFile() : el('backtest-season')?.value === '2026' ? './backtest-2026.json' : './dashboard.json');
   if (!response.ok) throw new Error('無法載入');
   let snapshot = await response.json();
   let data = el('patch') ? summarize(snapshot) : snapshot;
   el('status').textContent = '';
   function updateOptions() {
     const venue = el('venue').value;
-    const rows = data.teams.filter(([v]) => !venue || v === venue);
+    const rows = (data.teams ?? []).filter(([v]) => !venue || v === venue);
     options('region', rows.map(row => row[1]));
     const region = el('region')?.value ?? '';
     options('team', rows.filter(row => !region || row[1] === region).map(row => row[2]));
@@ -318,7 +318,24 @@ try {
       }
     };
     applySlice();
-  } else updateOptions();
+  } else {
+    updateOptions();
+    if (el('backtest-season')) el('backtest-season').onchange = async () => {
+      const year = el('backtest-season').value;
+      el('status').textContent = '載入中';
+      try {
+        const response = await fetch(year === '2026' ? './backtest-2026.json' : './dashboard.json');
+        if (!response.ok) throw new Error();
+        const result = await response.json();
+        if (year !== el('backtest-season').value) return;
+        data = result;
+        updateOptions();
+        el('status').textContent = '';
+      } catch {
+        if (year === el('backtest-season').value) el('status').textContent = '無法載入該賽季回測';
+      }
+    };
+  }
 } catch {
   el('status').textContent = '無法載入賽事資料';
 }
