@@ -7,6 +7,16 @@
 <main><div class="page-title"><p class="eyebrow">2026／2025 賽季 · LCK／LPL／世界賽</p><h1>賽前回測</h1></div>
 <p id="status" role="status">載入中</p>
 <div class="controls"><label>賽季<select id="backtest-season"><option>2026</option><option>2025</option></select></label><label>比賽場域<select id="venue"><option value="">全部</option><option>LCK</option><option>LPL</option><option value="WLDs">世界賽</option></select></label></div>
+<section id="matchup-validation"><h2>逐項驗證 · 勝負與首物件</h2>
+<p>勝負驗證使用 5/23–8/30 的 423 局新對局。首物件只用有標籤的 4 月起對局，首巴龍只有 LCK。</p>
+<div class="controls"><label>項目<select id="matchup-target"><option>勝負</option><option>首小龍</option><option>首預示者</option><option>首巴龍</option></select></label><label>賽區<select id="matchup-venue"><option>合計</option><option>LCK</option><option>LPL</option></select></label></div>
+<p id="matchup-summary"></p><div id="matchup-scores" class="scroll" role="status"></div>
+<p id="t1-geng"></p>
+<details><summary>計算方式與權重</summary>
+<p>勝負以 Elo 為基準。藍方勝率 = sigmoid(log(10) × Elo 差 ÷ 400 ＋ 特徵項)。Elo 的 K = 24，跨年留存測 0、25%、50%。</p>
+<p>近期勝率與紅藍方勝率，各取兩隊平滑勝率的 logit 差 × 0.5。交手項取藍方對紅方平滑歷史勝率的 logit × 1。平滑勝率 = (2 ＋ 加權勝局) ÷ (4 ＋ 加權局數)。時間半衰期 21 天，同日結果整批結束後才更新。</p>
+<p>首物件輸出藍方、紅方及無人取得三種結果。以既有同場域結果加 1 平滑後作先驗，共 4 票。每筆隊伍歷史增加 2<sup>−相隔天數 ÷ 21</sup> × λ<sup>相隔版本數</sup> 票。缺標籤不計分。歷史物件、近期與交手只取同賽季。</p>
+<p><a href="https://github.com/Chrouos/LOL_analysis/blob/main/analysis/validate_matchups.py">重跑程式</a> · <a href="https://github.com/DeusExMachina1993/LoL-Draft">五月後勝負來源</a></p></details></section>
 <section id="tuned-panel"><h2>單局勝負 · 2026 權重實驗</h2>
 <p class="note">用 2025 訓練、2026 年 1–3 月選參數，最後測試 4 月起的 341 局。</p>
 <div id="tuned-summary" role="status">載入中</div>
@@ -25,4 +35,4 @@
 <p class="note">出賽選手版須知道先發，選角版須等 BP 完成。物件風格使用歷史首物件率。LPL 的首巴龍欄位缺資料。</p></section>
 </main><footer>資料來源 <a href="https://github.com/cbplexiglass/LoL-Esports-Regional-Analyses/blob/main/2025_LoL_esports_match_data_from_OraclesElixir.csv">Oracle’s Elixir 2025 快照</a> · 地圖與圖示 © Riot Games，取自 <a href="https://raw.communitydragon.org/15.20/game/assets/">CommunityDragon</a> · <a href="https://github.com/Chrouos/LOL_analysis">GitHub</a></footer>
 <script type="module" src="./dashboard.mjs?v=8"></script>
-<script type="module" src="./win-model.mjs"></script><script type="module" src="./tuned-win.mjs"></script></body></html>
+<script type="module" src="./win-model.mjs"></script><script type="module" src="./tuned-win.mjs"></script><script type="module" src="./matchup-validation.mjs"></script></body></html>
