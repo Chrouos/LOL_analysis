@@ -1,8 +1,8 @@
 import {renderTable} from './ui.mjs';
+import {rankTeams, comparableStints} from './power-stats.mjs';
 
 const el = id => document.getElementById('power-' + id);
 const metrics = ['補兵／分','傷害／分','賺取經濟／分','傷害／賺取金幣','參團率','視野／分'];
-const mean = list => list.reduce((a,b)=>a+b,0) / list.length;
 const roles = {top: '上路', jng: '打野', mid: '中路', bot: '下路', sup: '輔助'};
 const pct = value => (100 * value).toFixed(1) + '%';
 function options(key, teams, fallback) {
@@ -12,14 +12,14 @@ function options(key, teams, fallback) {
   else select.selectedIndex = fallback;
 }
 
-function radar(profile) {
+function radar(profile, comparison) {
   const root = el('radar');
   root.replaceChildren();
   const ns = 'http://www.w3.org/2000/svg';
   const svg = document.createElementNS(ns,'svg');
   svg.setAttribute('viewBox','0 0 290 250');
   svg.setAttribute('role','img');
-  svg.setAttribute('aria-label',profile[2] + ' · ' + profile[0] + ' 的同位置百分位雷達');
+  svg.setAttribute('aria-label',profile[2] + ' 的同位置百分位雷達');
   const point = (i,r) => {
     const a = i * Math.PI / 3 - Math.PI / 2;
     return [145 + r * Math.cos(a),125 + r * Math.sin(a)];
@@ -32,8 +32,9 @@ function radar(profile) {
     svg.append(node);
   }
   for (const r of [22,44,66,88]) polygon(metrics.map((_,i)=>point(i,r)),'#414b61','none');
-  if (profile[5].every(value=>value !== null)) {
-    polygon(profile[5].map((value,i)=>point(i,value*.88)),'#bff479','#bff47955');
+  const series = [[profile,'#bff479','#bff47935'], [comparison,'#83bcff','#83bcff35']].filter(([row]) => row);
+  for (const [row,color,fill] of series) {
+    if (row[5].every(Number.isFinite)) polygon(row[5].map((value,i)=>point(i,value*.88)),color,fill);
   }
   const labels = ['補兵','傷害','經濟','傷害轉換','參團','視野'];
   labels.forEach((label,i)=>{
@@ -47,12 +48,16 @@ function radar(profile) {
     svg.append(node);
   });
   root.append(svg);
-  if (profile[5].some(value=>value === null)) {
-    const note = document.createElement('p');
-    note.className='note';
-    note.textContent='部分維度樣本不足，已保留右側數值。';
-    root.append(note);
+  const legend = document.createElement('div');
+  legend.className = 'power-legend';
+  for (const [row, color] of series) {
+    const caption = document.createElement('span');
+    caption.style.borderColor = color;
+    caption.textContent = row[0] + ' · ' + row[3] + ' 局' +
+      (row[5].every(Number.isFinite) ? '' : '（部分指標不足 10 局）');
+    legend.append(caption);
   }
+  root.append(legend);
 }
 
 try {
@@ -68,14 +73,9 @@ try {
     el('scope').textContent = '2026 ' + venue + ' · ' + games + ' 局 · 至 ' + dates.at(-1) + ' · 歷史陣容';
     el('probability').textContent = team === enemy ? '選擇兩支不同隊伍比較。' :
       team[0] + ' 對 ' + enemy[0] + ' · Elo 預期 ' + pct(1 / (1 + 10 ** (-(team[1]-enemy[1])/400)));
-    const rankings = teams.map(([name,elo,date,lineup],i)=>{
-      const playerValues = lineup.map(index=>profiles[index][5]);
-      const roster = playerValues.every(values=>values.every(value=>value !== null)) ? mean(playerValues.flat()) : null;
-      const score = roster === null ? null : .7 * 100 * (teams.length-i-.5)/teams.length + .3 * roster;
-      return {name,elo,date,lineup,roster,score};
-    }).sort((a,b)=>(b.score ?? -1)-(a.score ?? -1));
-    renderTable('power-rank',['隊伍','實力指數','Elo','陣容平均百分位','最後出賽','歷史陣容'],
-      rankings.map(row=>[row.name,row.score?.toFixed(1),row.elo,row.roster?.toFixed(1),row.date,row.lineup.map(i=>profiles[i][2]).join(' · ')]),{rowHeader:true});
+    renderTable('power-rank',['隊伍','實力指數','Elo','Elo 百分位','陣容平均百分位','最後出賽','歷史陣容'],
+      rankTeams(teams, profiles).map(row=>[row.name,row.score?.toFixed(1),row.elo,row.eloPercentile.toFixed(1),
+        row.roster?.toFixed(1),row.date,row.lineup.map(i=>profiles[i][2]).join(' · ')]),{rowHeader:true});
   }
   const career = {
     Faker: [ ['2026','世界賽','T1','四強（第 3–4 名）'], ['2026','MSI','T1','第 5–6 名'],
@@ -94,15 +94,25 @@ try {
     const {profiles} = data[el('player-venue').value];
     const current = profiles[Number(el('stint').value)];
     if (!current) return;
-    const [team, position, player, games, raw, percentiles, valid] = current;
-    const rawText = (value, i) => value == null ? '—' : value.toFixed(2) + (i === 4 ? '%' : '');
-    radar(current);
-    renderTable('power-player',[player + ' · ' + team, '數值', '百分位', '有效局數'],
-      metrics.map((label,i) => [label, rawText(raw[i], i), percentiles[i], valid[i]]), {rowHeader:true});
-    const stints = profiles.filter(row => row[2] === player && row[1] === position);
-    renderTable('power-stints',['隊伍','位置','局數',...metrics],
-      stints.map(row => [row[0], roles[row[1]], row[3], ...row[4].map(rawText)]),
-      {rowHeader:true, empty:'此賽區沒有相同位置的其他隊伍紀錄'});
+    const [team, position, player] = current;
+    const candidates = comparableStints(profiles, current);
+    const compare = el('compare');
+    const previous = compare.value;
+    compare.replaceChildren(new Option('只看 ' + team, ''), ...candidates.map(([row,i]) => new Option(row[0],i)));
+    if (candidates.some(([,i]) => String(i) === previous)) compare.value = previous;
+    el('compare-field').hidden = !candidates.length;
+    const other = compare.value === '' ? null : profiles[Number(compare.value)];
+    const metric = (row,i) => {
+      const value = row[4][i], percentile = row[5][i];
+      if (!Number.isFinite(value)) return '— · 0 局';
+      return value.toFixed(2) + (i === 4 ? '%' : '') + ' · ' +
+        (Number.isFinite(percentile) ? 'P' + percentile : '—') + ' · ' + row[6][i] + ' 局';
+    };
+    radar(current, other);
+    renderTable('power-player',['指標',team,...(other ? [other[0]] : [])],
+      metrics.map((label,i) => [label, metric(current,i), ...(other ? [metric(other,i)] : [])]), {rowHeader:true});
+    renderTable('power-stints',['同位置隊伍','位置','出賽局數'],
+      [current,...candidates.map(([row]) => row)].map(row => [row[0], roles[position], row[3]]),{rowHeader:true});
     renderTable('power-career',['賽季','賽事','隊伍','名次'],career[player] ?? [],
       {empty:'目前沒有收錄這位選手的國際賽名次'});
     if (careerSources[player]) {
@@ -126,6 +136,7 @@ try {
     const {profiles} = data[el('player-venue').value];
     const names = [...new Set(profiles.map(row => row[2]))].sort((a,b) => a.localeCompare(b));
     el('person').replaceChildren(...names.map(name => new Option(name,name)));
+    el('compare').value = '';
     const person = preferredPerson ?? (names.includes('Faker') ? 'Faker' : names[0]);
     if (names.includes(person)) el('person').value = person;
     changePerson(preferredTeam);
@@ -140,8 +151,9 @@ try {
   changeVenue();
   if (Object.hasOwn(data, params.get('venue'))) el('player-venue').value = params.get('venue');
   el('player-venue').onchange = () => changeProfileVenue();
-  el('person').onchange = () => changePerson();
-  el('stint').onchange = renderProfile;
+  el('person').onchange = () => { el('compare').value = ''; changePerson(); };
+  el('stint').onchange = () => { el('compare').value = ''; renderProfile(); };
+  el('compare').onchange = renderProfile;
   changeProfileVenue(params.get('player'), params.get('team'));
 } catch { el('scope').textContent='實力資料載入失敗'; }
 

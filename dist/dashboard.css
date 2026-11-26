@@ -93,3 +93,11 @@ main>section>h2{line-height:1.25}
 }
 
 .duel-metric strong.metric-negative{color:#ffb39f}
+
+.power-profile{display:grid;grid-template-columns:minmax(220px,300px) minmax(0,1fr);gap:20px;align-items:center}
+.power-legend{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.power-legend span{border-left:3px solid;padding:3px 7px;background:#101726;border-radius:3px;font-size:.82rem}
+.power-career{margin-top:16px;padding:10px 12px;border:1px solid var(--line);border-radius:7px}
+.power-career summary{cursor:pointer;font-weight:650}
+#power-compare-field[hidden]{display:none}
+@media(max-width:700px){.power-profile{grid-template-columns:1fr}.power-profile svg{max-width:300px;display:block;margin:auto}}
