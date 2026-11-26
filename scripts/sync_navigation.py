@@ -5,7 +5,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1] / "dist"
 NAVIGATION = (
-    ("index", "賽區"), ("teams", "隊伍"), ("players", "選手"),
+    ("index", "賽區"), ("teams", "隊伍"), ("power", "實力表"), ("players", "選手"),
     ("champions", "英雄"), ("worlds", "世界賽"), ("backtest", "回測"), ("sources", "資料來源"),
 )
 HEADER = re.compile(r'<header class="site-header">.*?</header>', re.S)
