@@ -264,7 +264,7 @@ try {
     const filtered = eligible.filter(row => (!patch || row[1] === patch) && (!start || row[0] >= start) && (!end || row[0] <= end));
     const dates = filtered.length ? filtered[0][0] + ' 至 ' + filtered.at(-1)[0] : '沒有符合日期的對局';
     el('selected-scope').textContent = start && end && start > end ? '開始日須早於或等於結束日' :
-      dates + ' · ' + filtered.length + ' 局 · ' + (patch ? '競賽版本 ' + patch : '全部版本');
+      (venue ? venues[venue] + ' · ' : '') + dates + ' · ' + filtered.length + ' 局 · ' + (patch ? '競賽版本 ' + patch : '全部版本');
     setupObjectiveComparison(data.observed);
     updateOptions();
   }
@@ -279,8 +279,10 @@ try {
       applySlice();
     };
     let request = 0;
+    let shownYear = el('season').value;
     el('season').onchange = async () => {
       const current = ++request;
+      const year = el('season').value;
       el('status').textContent = '載入中';
       try {
         const next = await fetch(seasonFile());
@@ -288,11 +290,15 @@ try {
         const result = await next.json();
         if (current !== request) return;
         snapshot = result;
+        shownYear = year;
         for (const id of ['patch', 'start-date', 'end-date']) el(id).value = '';
         applySlice();
         el('status').textContent = '';
       } catch {
-        if (current === request) el('status').textContent = '賽季資料載入失敗，目前顯示先前載入的資料';
+        if (current === request) {
+          el('season').value = shownYear;
+          el('status').textContent = '賽季資料載入失敗，目前顯示 ' + shownYear + ' 資料';
+        }
       }
     };
     applySlice();

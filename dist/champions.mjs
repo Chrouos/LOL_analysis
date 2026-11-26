@@ -4,7 +4,7 @@ import {championIcons} from './champion-icons.mjs';
 import {duels, duelComparison, playerPool, draftRates} from './champion-stats.mjs';
 
 const el = id => document.getElementById(id);
-let data, games;
+let data, games, displayedYear;
 function options(id, values, placeholder) {
   const select = el(id), old = select.value;
   const list = values.map(([value, title]) => new Option(title, value));
@@ -154,11 +154,14 @@ function drawComparison(filters) {
   for (const [label, value, note] of [
     ['實際勝率', pct(wins / gamesPlayed), wins + ' 勝／' + gamesPlayed + ' 局'],
     ['Elo 預期', covered ? pct(expected / covered) : '—', covered + ' 局有預期值'],
-    ['實際與預期差', difference === null ? '—' : (difference > 0 ? '+' : '') + difference.toFixed(1) + ' pp',
+    ['實際與預期差', difference === null ? '—' : (difference > 0 ? '+' : '') + difference.toFixed(1) + ' 個百分點',
      covered === gamesPlayed ? '同一批對局' : '僅比較有預期值的對局'],
   ]) {
     const box = add(metrics, 'div', '', 'duel-metric');
-    add(box, 'span', label); add(box, 'strong', value); add(box, 'small', note);
+    add(box, 'span', label);
+    const metric = add(box, 'strong', value);
+    if (label === '實際與預期差' && difference < 0) metric.classList.add('metric-negative');
+    add(box, 'small', note);
   }
   add(root, 'p', 'Elo 以當日前的隊伍戰績估計。差值可能受陣容、版本與選手影響。', 'note');
 }
@@ -196,9 +199,11 @@ function venueChanged() {
 let request = 0;
 async function load() {
   const token = ++request;
+  const year = el('season').value;
+  const contextualFields = ['venue', 'stage', 'role', 'player', 'hero', 'opponent', 'pool-player', 'query'];
+  for (const key of contextualFields) el(key).disabled = true;
   el('coverage').textContent = '載入中';
   try {
-    const year = el('season').value;
     const [response, elo] = await Promise.all([
       fetch('./champions-' + year + '.json'),
       fetch('./duel-elo-' + year + '.json').then(r => r.ok ? r.json() : []).catch(() => []),
@@ -207,10 +212,24 @@ async function load() {
     const loaded = await response.json();
     if (elo.length === loaded.games.length) loaded.games = loaded.games.map((game, i) => [...game, elo[i]]);
     if (token !== request) return;
+    if (displayedYear !== year) {
+      for (const key of ['player', 'hero', 'opponent', 'pool-player']) el(key).value = '';
+      for (const key of ['hero', 'opponent']) {
+        el(key + '-search').value = '';
+        el(key + '-picker').open = false;
+      }
+    }
     data = loaded;
+    displayedYear = year;
     options('venue',[...new Set(data.games.map(g=>g[0]))].sort().map(v=>[v,v==='WLDs'?'世界賽':v]));
     venueChanged();
-  } catch { if (token === request) el('coverage').textContent = '無法載入賽季資料'; }
+  } catch {
+    if (token !== request) return;
+    if (displayedYear) el('season').value = displayedYear;
+    el('coverage').textContent = displayedYear ? '載入失敗，目前仍顯示 ' + displayedYear + ' 資料' : '無法載入賽季資料';
+  } finally {
+    if (token === request && data) for (const key of contextualFields) el(key).disabled = false;
+  }
 }
 for (const [key,handler] of Object.entries({season:load,venue:venueChanged,stage:stageChanged,role:duelOptions,
   player:heroOptions,hero:opponentOptions,opponent:showDuel,'pool-player':showPool})) el(key).onchange=handler;
