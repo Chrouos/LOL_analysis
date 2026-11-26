@@ -3,6 +3,7 @@ import {renderTable} from './ui.mjs';
 const el = id => document.getElementById('power-' + id);
 const metrics = ['補兵／分','傷害／分','賺取經濟／分','傷害／賺取金幣','參團率','視野／分'];
 const mean = list => list.reduce((a,b)=>a+b,0) / list.length;
+const roles = {top: '上路', jng: '打野', mid: '中路', bot: '下路', sup: '輔助'};
 const pct = value => (100 * value).toFixed(1) + '%';
 function options(key, teams, fallback) {
   const select = el(key), old = select.value;
@@ -18,7 +19,7 @@ function radar(profile) {
   const svg = document.createElementNS(ns,'svg');
   svg.setAttribute('viewBox','0 0 290 250');
   svg.setAttribute('role','img');
-  svg.setAttribute('aria-label',profile[2] + ' 的同位置百分位雷達');
+  svg.setAttribute('aria-label',profile[2] + ' · ' + profile[0] + ' 的同位置百分位雷達');
   const point = (i,r) => {
     const a = i * Math.PI / 3 - Math.PI / 2;
     return [145 + r * Math.cos(a),125 + r * Math.sin(a)];
@@ -75,10 +76,59 @@ try {
     }).sort((a,b)=>(b.score ?? -1)-(a.score ?? -1));
     renderTable('power-rank',['隊伍','實力指數','Elo','陣容平均百分位','最後出賽','歷史陣容'],
       rankings.map(row=>[row.name,row.score?.toFixed(1),row.elo,row.roster?.toFixed(1),row.date,row.lineup.map(i=>profiles[i][2]).join(' · ')]),{rowHeader:true});
-    const profile = profiles[team[3][Number(el('role').value)]];
-    radar(profile);
-    renderTable('power-player',[profile[2] + ' · ' + profile[3] + ' 局','數值','百分位','有效局數'],
-      metrics.map((label,i)=>[label,profile[4][i]?.toFixed(2),profile[5][i],profile[6][i]]),{rowHeader:true});
+  }
+  const career = {
+    Faker: [ ['2026','世界賽','T1','四強（第 3–4 名）'], ['2026','MSI','T1','第 5–6 名'],
+      ['2025','世界賽','T1','冠軍'], ['2025','MSI','T1','亞軍'], ['2024','世界賽','T1','冠軍'] ],
+    Chovy: [ ['2026','世界賽','Gen.G','亞軍'], ['2025','MSI','Gen.G','冠軍'] ],
+    Knight: [ ['2026','世界賽','Bilibili Gaming','冠軍'], ['2026','MSI','Bilibili Gaming','亞軍'],
+      ['2025','世界賽','Bilibili Gaming','第 9–11 名'], ['2025','MSI','Bilibili Gaming','第 4 名'] ],
+  };
+  const careerSources = {
+    Faker: 'https://guessports.com/en/lol/jugador/faker/',
+    Chovy: 'https://liquipedia.net/leagueoflegends/Chovy/Results',
+    Knight: 'https://liquipedia.net/leagueoflegends/Knight/Results',
+  };
+  const params = new URLSearchParams(location.search);
+  function renderProfile() {
+    const {profiles} = data[el('player-venue').value];
+    const current = profiles[Number(el('stint').value)];
+    if (!current) return;
+    const [team, position, player, games, raw, percentiles, valid] = current;
+    const rawText = (value, i) => value == null ? '—' : value.toFixed(2) + (i === 4 ? '%' : '');
+    radar(current);
+    renderTable('power-player',[player + ' · ' + team, '數值', '百分位', '有效局數'],
+      metrics.map((label,i) => [label, rawText(raw[i], i), percentiles[i], valid[i]]), {rowHeader:true});
+    const stints = profiles.filter(row => row[2] === player && row[1] === position);
+    renderTable('power-stints',['隊伍','位置','局數',...metrics],
+      stints.map(row => [row[0], roles[row[1]], row[3], ...row[4].map(rawText)]),
+      {rowHeader:true, empty:'此賽區沒有相同位置的其他隊伍紀錄'});
+    renderTable('power-career',['賽季','賽事','隊伍','名次'],career[player] ?? [],
+      {empty:'目前沒有收錄這位選手的國際賽名次'});
+    if (careerSources[player]) {
+      const source = document.createElement('a');
+      source.href = careerSources[player];
+      source.textContent = '選手成績來源';
+      el('career').append(source);
+    }
+  }
+  function changePerson(preferredTeam) {
+    const {profiles} = data[el('player-venue').value];
+    const player = el('person').value;
+    const stints = profiles.map((row, i) => [row,i]).filter(([row]) => row[2] === player)
+      .sort(([a],[b]) => b[3] - a[3]);
+    el('stint').replaceChildren(...stints.map(([row,i]) => new Option(row[0] + ' · ' + roles[row[1]] + ' · ' + row[3] + ' 局', i)));
+    const preferred = stints.find(([row]) => row[0] === preferredTeam);
+    if (preferred) el('stint').value = String(preferred[1]);
+    renderProfile();
+  }
+  function changeProfileVenue(preferredPerson, preferredTeam) {
+    const {profiles} = data[el('player-venue').value];
+    const names = [...new Set(profiles.map(row => row[2]))].sort((a,b) => a.localeCompare(b));
+    el('person').replaceChildren(...names.map(name => new Option(name,name)));
+    const person = preferredPerson ?? (names.includes('Faker') ? 'Faker' : names[0]);
+    if (names.includes(person)) el('person').value = person;
+    changePerson(preferredTeam);
   }
   function changeVenue() {
     const {teams} = data[el('venue').value];
@@ -86,6 +136,33 @@ try {
     render();
   }
   el('venue').onchange=changeVenue;
-  for (const key of ['team','opponent','role']) el(key).onchange=render;
+  for (const key of ['team','opponent']) el(key).onchange=render;
   changeVenue();
+  if (Object.hasOwn(data, params.get('venue'))) el('player-venue').value = params.get('venue');
+  el('player-venue').onchange = () => changeProfileVenue();
+  el('person').onchange = () => changePerson();
+  el('stint').onchange = renderProfile;
+  changeProfileVenue(params.get('player'), params.get('team'));
 } catch { el('scope').textContent='實力資料載入失敗'; }
+
+
+try {
+  const response = await fetch('./worlds-2026-series.json');
+  if (!response.ok) throw new Error();
+  const series = await response.json();
+  const stages = ['瑞士輪','八強','四強','亞軍','冠軍'];
+  const teams = new Map();
+  for (const [, stage, a, aw, bw, b] of series) {
+    for (const [name,wins,losses] of [[a,aw,bw],[b,bw,aw]]) {
+      const row = teams.get(name) ?? {name, wins:0, losses:0, stage:0};
+      const placement = {QUARTERFINALS:1,SEMIFINALS:2,FINALS:wins > losses ? 4 : 3}[stage] ?? 0;
+      row.stage = Math.max(row.stage,placement);
+      row.wins += wins; row.losses += losses;
+      teams.set(name,row);
+    }
+  }
+  const ratio = row => row.wins / (row.wins + row.losses);
+  const rows = [...teams.values()].sort((a,b) => b.stage - a.stage || ratio(b) - ratio(a));
+  renderTable('power-worlds',['隊伍','最高階段','勝局','敗局','單局勝率'],
+    rows.map(row => [row.name, stages[row.stage], row.wins, row.losses, pct(ratio(row))]), {rowHeader:true});
+} catch { el('worlds').textContent = '世界賽資料載入失敗'; }

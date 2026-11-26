@@ -10,11 +10,18 @@
 <label>隊伍<select id="power-team"></select></label><label>比較對手<select id="power-opponent"></select></label></div>
 <section><h2>隊伍評分與對戰基準</h2><p id="power-probability"></p><div id="power-rank" class="scroll"></div>
 <p class="note">隊伍實力指數＝70% 賽區 Elo 百分位＋30% 陣容五人平均百分位。此權重用於探索，尚未回測。對戰機率另以純 Elo 估計。</p></section>
-<section><h2>選手六項雷達</h2><div class="controls"><label>位置<select id="power-role"><option value="0">上路</option><option value="1">打野</option><option value="2">中路</option><option value="3">下路</option><option value="4">輔助</option></select></label></div>
+<section id="player-radar"><h2>選手 × 隊伍六角圖</h2><div class="controls">
+<label>賽區<select id="power-player-venue"><option>LCK</option><option>LPL</option></select></label>
+<label>選手<select id="power-person"></select></label><label>效力隊伍<select id="power-stint"></select></label></div>
 <div class="player-layout"><div id="power-radar"></div><div id="power-player" class="scroll"></div></div>
-<p class="note">比較範圍為同賽區、同位置，每項至少有 10 局。分母與分子先跨局加總，再算比值。</p></section>
+<p class="note">同賽區、同位置的百分位，每項至少有 10 局。跨隊差異可能受版本、對手與打法影響。</p>
+<h3>同一選手的不同隊伍</h3><div id="power-stints" class="scroll"></div>
+<h3>歷年國際賽成績</h3><div id="power-career" class="scroll"></div>
+<p class="note">首批收錄 Faker、Chovy、Knight 的部分 MSI／世界賽名次。</p></section>
+<section id="worlds-power"><h2>2026 世界賽 · 隊伍實績</h2><div id="power-worlds" class="scroll"></div>
+<p class="note">正賽 76 局，依最高到達階段、局勝率排序。資料來源為 <a href="./worlds.html">世界賽系列賽比分</a>。</p></section>
 <section><h2>轉會與世界賽資料</h2>
 <p>實力表採快照中最後一場完整陣容。2027 轉會資訊另查 <a href="https://worldsatlas.gg/transfers">Worlds Atlas</a> 的已確認公告與 <a href="https://lolnow.gg/lol-2027-roster-changes/">LoLNow 轉會整理</a>。</p>
 <p><a href="./worlds.html">2026 世界賽賽果</a>另有 <a href="https://riftgraphs.com/charts">Rift Graphs 逐局欄位</a>可供核對，含選角、經濟與傷害。這批逐局資料尚未匯入實力表。</p></section>
 <p><a href="./sources.html">資料覆蓋</a> · <a href="https://github.com/Chrouos/LOL_analysis/blob/main/analysis/build_power.py">計算程式</a></p>
-</main><script type="module" src="./power.mjs"></script></body></html>
+</main><script type="module" src="./power.mjs?v=2"></script></body></html>

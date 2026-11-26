@@ -93,6 +93,15 @@ function showProfile(row) {
   const details = document.createElement('p');
   details.textContent = row[2] + ' · ' + roles[row[4]] + ' · ' + row[5] + ' 局';
   card.append(avatar(row), name, details);
+  if (row[0] === row[1] && (row[0] === 'LCK' || row[0] === 'LPL') && el('season')?.value === '2026') {
+    const link = document.createElement('a');
+    const query = new URLSearchParams({venue:row[0], player:row[3], team:row[2]});
+    link.href = './power.html?' + query + '#player-radar';
+    link.textContent = '查看選手 × 隊伍六角圖';
+    const shortcut = document.createElement('p');
+    shortcut.append(link);
+    card.append(shortcut);
+  }
   profile.append(card);
 }
 
