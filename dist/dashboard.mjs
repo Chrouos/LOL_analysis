@@ -239,7 +239,7 @@ function render(data) {
 
 try {
   const seasonFile = () => el('season')?.value === '2025' ? './slices.json?v=2' : './slices-2026.json';
-  const response = await fetch(el('patch') ? seasonFile() : el('backtest-season')?.value === '2026' ? './backtest-2026.json' : './dashboard.json');
+  const response = await fetch(el('patch') ? seasonFile() : el('backtest-season')?.value === '2026' ? './backtest-2026.json?v=2' : './dashboard.json?v=2');
   if (!response.ok) throw new Error('無法載入');
   let snapshot = await response.json();
   let data = el('patch') ? summarize(snapshot) : snapshot;
@@ -308,7 +308,7 @@ try {
       const year = el('backtest-season').value;
       el('status').textContent = '載入中';
       try {
-        const response = await fetch(year === '2026' ? './backtest-2026.json' : './dashboard.json');
+        const response = await fetch(year === '2026' ? './backtest-2026.json?v=2' : './dashboard.json?v=2');
         if (!response.ok) throw new Error();
         const result = await response.json();
         if (year !== el('backtest-season').value) return;

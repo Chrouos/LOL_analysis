@@ -3,11 +3,13 @@ import hashlib
 import json
 import sys
 from collections import Counter
+from datetime import date
+from math import isclose
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "analysis"))
-from backtest import outcomes
+from backtest import evaluate, outcomes
 from build_duel_elo import build
 
 
@@ -40,6 +42,24 @@ def validate_year(year, filename):
     print(f"{year}: {len(dates)} games, GD@15 coverage {dict(coverage)}")
 
 
+def validate_backtest():
+    from backtest import TARGETS
+
+    def game(day, teams, winner):
+        return (date(2026, 4, day), (16, 7), "LCK", teams,
+                {target: winner if target == "result" else None for target in TARGETS})
+
+    games = [game(1, ("Blue", "Red"), 0), game(2, ("Red", "Blue"), 1),
+             game(2, ("Blue", "Red"), 0)]
+    scores, _, _ = evaluate(games, {}, date(2026, 4, 2))
+    reverse, same = scores["LCK", "result"]
+    weight = 2 ** (-1 / 60)
+    assert len(reverse[1]) == len(reverse[2]) == 2
+    assert isclose(reverse[2][1], (8 / 3 + weight) / (8 + weight))
+    assert isclose(same[2][0], (16 / 3 + weight) / (8 + weight))
+    assert reverse[1] == same[1]  # Same-day results cannot change the baseline.
+
+
 def main():
     test = dict(firstdragon="0", firstherald="", firstbaron="", result="0", heralds="0")
     assert outcomes(test, test) == {
@@ -47,6 +67,7 @@ def main():
     }
     assert outcomes(dict(test, heralds="1"), test)["firstherald"] == 0
     assert outcomes(dict(test, heralds="2"), test)["firstherald"] is None
+    validate_backtest()
     validate_year(2025, "slices.json")
     validate_year(2026, "slices-2026.json")
 

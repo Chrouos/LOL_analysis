@@ -50,3 +50,10 @@ python -B analysis/build_duel_elo.py
 ## 資料完整性檢查
 
 更新快照後執行 `python -B scripts/check_analysis.py`，核對勝負與物件標籤、位置欄位、逐局 Elo 對照、檔案指紋及有效局數。若更動原始選角快照，重新執行 `analysis/build_duel_elo.py` 產生比對表。線上英雄頁會先驗證快照指紋，才採用附加的 Elo 預期值。
+
+場域基準回測可直接從網站逐局快照重算。兩隊都匹配到的歷史交手每局只加權一次，單局勝負只保留藍勝與紅勝。
+
+```sh
+python -B analysis/backtest.py --snapshot dist/slices.json dist/dashboard.json 2025-04-01
+python -B analysis/backtest.py --snapshot dist/slices-2026.json dist/backtest-2026.json 2026-04-01
+```

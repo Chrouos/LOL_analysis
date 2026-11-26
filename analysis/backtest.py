@@ -1,10 +1,12 @@
 """Run with python analysis/backtest.py path/to/oracles-elixir-2025.csv."""
 import csv
+import json
 import sys
 from collections import Counter, defaultdict
 from datetime import date
 from itertools import groupby
 from math import log
+from pathlib import Path
 from statistics import mean
 
 WORLDS_REGIONS = {
@@ -77,7 +79,7 @@ def evaluate(games, regions, start_date=date(2025, 4, 1)):
                     continue
                 # Predict default side/none from the same venue as a baseline.
                 same_venue = [g for g in history if g[2] == venue and g[4][target] is not None]
-                baseline = [1.0, 1.0, 0.01 if target in ("firstdragon", "result") else 1.0]
+                baseline = [1.0, 1.0] if target == "result" else [1.0, 1.0, 0.01 if target == "firstdragon" else 1.0]
                 for game in same_venue:
                     baseline[game[4][target]] += 1
                 p_base = [n / sum(baseline) for n in baseline]
@@ -91,12 +93,12 @@ def evaluate(games, regions, start_date=date(2025, 4, 1)):
                         continue
                     weight = 2 ** (-(day - old_day).days / 60 - max(0, patch[1] - old_patch[1]) / 2)
                     weight *= 1 if venue == old_venue else .5
-                    for side, team in enumerate(teams):
-                        if team not in old_teams:
-                            continue
-                        old_side = old_teams.index(team)
-                        mapped = 2 if outcome == 2 else side if outcome == old_side else 1 - side
-                        counts[mapped] += weight
+                    # When both teams match, either team implies the same mapped
+                    # outcome. Count the historical game once.
+                    side = 0 if teams[0] in old_teams else 1
+                    old_side = old_teams.index(teams[side])
+                    mapped = 2 if outcome == 2 else side if outcome == old_side else 1 - side
+                    counts[mapped] += weight
                 pred = [n / sum(counts) for n in counts]
                 scores[venue, target].append((actual, p_base, pred))
         history.extend(batch)
@@ -105,12 +107,32 @@ def evaluate(games, regions, start_date=date(2025, 4, 1)):
 
 def metrics(scored, index):
     return (
-        mean(max(range(3), key=row[index].__getitem__) == row[0] for row in scored),
+        mean(max(range(len(row[index])), key=row[index].__getitem__) == row[0] for row in scored),
         mean(-log(row[index][row[0]]) for row in scored),
     )
 
 
+def refresh_backtest(snapshot_path, output_path, start):
+    snapshot = json.loads(Path(snapshot_path).read_text(encoding="utf-8"))
+    games = []
+    for day, patch, venue, blue, red, dragon, herald, baron, win, *_ in snapshot["games"]:
+        targets = {key: value if value >= 0 else None for key, value in zip(TARGETS, (dragon, herald, baron, win))}
+        games.append((date.fromisoformat(day), tuple(map(int, patch.split("."))), venue,
+                      (snapshot["teams"][blue], snapshot["teams"][red]), targets))
+    scores, _, _ = evaluate(games, snapshot["regions"], date.fromisoformat(start))
+    output = Path(output_path)
+    payload = json.loads(output.read_text(encoding="utf-8")) if output.exists() else {}
+    payload["backtest"] = [[venue, target, len(scored),
+                            *[metrics(scored, i) if scored else None for i in (1, 2)]]
+                           for venue in ("LCK", "LPL", "WLDs") for target in TARGETS
+                           for scored in [scores[venue, target]]]
+    output.write_text(json.dumps(payload, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+
+
 if __name__ == "__main__":
+    if sys.argv[1] == "--snapshot":
+        refresh_backtest(*sys.argv[2:])
+        raise SystemExit
     games, regions = load(sys.argv[1])
     scores, observed, cross = evaluate(games, regions)
     for venue in ("LCK", "LPL", "WLDs"):
