@@ -206,11 +206,16 @@ async function load() {
   try {
     const [response, elo] = await Promise.all([
       fetch('./champions-' + year + '.json'),
-      fetch('./duel-elo-' + year + '.json').then(r => r.ok ? r.json() : []).catch(() => []),
+      fetch('./duel-elo-' + year + '.json?v=2').then(r => r.ok ? r.json() : []).catch(() => []),
     ]);
     if (!response.ok) throw new Error();
-    const loaded = await response.json();
-    if (elo.length === loaded.games.length) loaded.games = loaded.games.map((game, i) => [...game, elo[i]]);
+    const bytes = await response.arrayBuffer();
+    const loaded = JSON.parse(new TextDecoder().decode(bytes));
+    if (globalThis.crypto?.subtle && elo?.probabilities?.length === loaded.games.length) {
+      const digest = await crypto.subtle.digest('SHA-256', bytes);
+      const hash = [...new Uint8Array(digest)].map(byte => byte.toString(16).padStart(2, '0')).join('');
+      if (hash === elo.sha256) loaded.games = loaded.games.map((game, i) => [...game, elo.probabilities[i]]);
+    }
     if (token !== request) return;
     if (displayedYear !== year) {
       for (const key of ['player', 'hero', 'opponent', 'pool-player']) el(key).value = '';

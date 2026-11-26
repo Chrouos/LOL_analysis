@@ -46,3 +46,7 @@ python -B analysis/build_duel_elo.py
 - `dist/ui.mjs` 提供表格結構、欄列標題、空狀態和自訂儲存格。各頁模組負責查詢、資料整理與欄位順序。
 - `dist/dashboard.css` 管理共用視覺、鍵盤焦點和圖表動效。系統偏好減少動態效果時停用動畫。
 - 導覽集中在 `scripts/sync_navigation.py`，修改後執行 `python -B scripts/sync_navigation.py` 更新靜態頁面。以 `--check` 確認產物同步。
+
+## 資料完整性檢查
+
+更新快照後執行 `python -B scripts/check_analysis.py`，核對勝負與物件標籤、位置欄位、逐局 Elo 對照、檔案指紋及有效局數。若更動原始選角快照，重新執行 `analysis/build_duel_elo.py` 產生比對表。線上英雄頁會先驗證快照指紋，才採用附加的 Elo 預期值。

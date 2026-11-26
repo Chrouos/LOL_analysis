@@ -16,6 +16,20 @@ WORLDS_REGIONS = {
 TARGETS = ("firstdragon", "firstherald", "firstbaron", "result")
 
 
+def outcomes(blue, red):
+    result = {}
+    for target in TARGETS:
+        pair = blue[target], red[target]
+        if target == "firstherald" and "" in pair:
+            # Infer a first Herald only from an unambiguous 0/1 total.
+            pair = blue["heralds"], red["heralds"]
+        owner = {("1", "0"): 0, ("0", "1"): 1}.get(pair)
+        if target != "result" and pair == ("0", "0"):
+            owner = 2
+        result[target] = owner
+    return result
+
+
 def load(path):
     matches = defaultdict(dict)
     regions = WORLDS_REGIONS.copy()
@@ -39,13 +53,7 @@ def load(path):
         patch = blue["patch"].split(".")
         if len(patch) != 2:
             continue
-        targets = {}
-        for target in TARGETS:
-            values = blue[target], red[target]
-            if target == "firstherald" and "" in values:
-                # A unique Herald owner identifies first Herald when only one was taken.
-                values = blue["heralds"], red["heralds"]
-            targets[target] = {("1", "0"): 0, ("0", "1"): 1, ("0", "0"): 2}.get(values)
+        targets = outcomes(blue, red)
         games.append((date.fromisoformat(blue["date"][:10]), tuple(map(int, patch)), blue["league"],
                       (blue["teamname"], red["teamname"]), targets))
     return sorted(games, key=lambda game: game[0]), regions

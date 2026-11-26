@@ -29,10 +29,13 @@ export function summarize(snapshot, {start = '', end = '', patch = ''} = {}) {
       }
     }
     for (const [side, team] of sides.entries()) {
-      const counts = item(teams, venue + '/' + team, [venue, regions[side], team, {games: 0, blue: 0, red: 0, blue_wins: 0, red_wins: 0}])[3];
+      const counts = item(teams, venue + '/' + team, [venue, regions[side], team, {games: 0, blue: 0, red: 0, blue_wins: 0, red_wins: 0, blue_valid: 0, red_valid: 0}])[3];
       counts.games++;
       counts[side === 0 ? 'blue' : 'red']++;
-      if (win === side) counts[side === 0 ? 'blue_wins' : 'red_wins']++;
+      if (win === 0 || win === 1) {
+        counts[side === 0 ? 'blue_valid' : 'red_valid']++;
+        if (win === side) counts[side === 0 ? 'blue_wins' : 'red_wins']++;
+      }
       for (const [i, target] of targets.entries()) {
         if (outcomes[i] < 0) continue;
         counts[target] = (counts[target] ?? 0) + Number(outcomes[i] === side);

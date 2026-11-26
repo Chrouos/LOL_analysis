@@ -1,4 +1,5 @@
 """Compute per-game Elo expectations aligned to the champion views."""
+import hashlib
 import json
 from collections import defaultdict
 from itertools import groupby
@@ -56,5 +57,7 @@ def build(year, source):
 if __name__ == "__main__":
     for year, source in ((2025, "slices.json"), (2026, "slices-2026.json")):
         data = build(year, source)
-        (ROOT / f"duel-elo-{year}.json").write_text(json.dumps(data, separators=(",", ":")), encoding="utf-8")
+        snapshot = (ROOT / f"champions-{year}.json").read_bytes()
+        payload = {"sha256": hashlib.sha256(snapshot).hexdigest(), "probabilities": data}
+        (ROOT / f"duel-elo-{year}.json").write_text(json.dumps(payload, separators=(",", ":")), encoding="utf-8")
         print(year, sum(p is not None for p in data), len(data))

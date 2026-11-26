@@ -5,7 +5,7 @@ import sys
 from collections import defaultdict
 from pathlib import Path
 
-from backtest import TARGETS, load
+from backtest import load, outcomes
 
 ROLES = ("top", "jng", "mid", "bot", "sup")
 
@@ -33,12 +33,7 @@ def build(path):
             assert "lpl.qq.com/" in blue["url"]
             venue = "LPL"
         day = blue["date"][:10]
-        outcomes = []
-        for target in TARGETS:
-            pair = blue[target], red[target]
-            if target == "firstherald" and "" in pair:
-                pair = blue["heralds"], red["heralds"]
-            outcomes.append({("1", "0"): 0, ("0", "1"): 1, ("0", "0"): 2}.get(pair, -1))
+        labels = [value if value is not None else -1 for value in outcomes(blue, red).values()]
         sides = [index("teams", row["teamname"]) for row in (blue, red)]
         players = []
         gold = {}
@@ -49,7 +44,7 @@ def build(path):
                 players.extend((position, index("players", player), index("heroes", hero)))
                 if row.get("golddiffat15"):
                     gold[position] = int(float(row["golddiffat15"]))
-        games.append([day, blue["patch"], venue, *sides, *outcomes, players, gold])
+        games.append([day, blue["patch"], venue, *sides, *labels, players, gold])
     return {"games": sorted(games), "regions": regions,
             **{group: list(values) for group, values in names.items()}}
 

@@ -225,7 +225,7 @@ function render(data) {
     }));
   table('teams', ['場域', '隊伍賽區', '隊伍', '局數', '勝率', '藍方勝率', '紅方勝率', '首條小龍', '首預示者', '首巴龍'],
     (data.teams ?? []).filter(includesTeam).map(([v, r, t, c]) => [venues[v], r, t, c.games,
-      rate(c.result, c.result_n), rate(c.blue_wins ?? 0, c.blue), rate(c.red_wins ?? 0, c.red),
+      rate(c.result, c.result_n), rate(c.blue_wins ?? 0, c.blue_valid ?? c.blue), rate(c.red_wins ?? 0, c.red_valid ?? c.red),
       ...['firstdragon', 'firstherald', 'firstbaron'].map(key => rate(c[key], c[key + '_n']))]));
   table('players', ['場域', '隊伍賽區', '隊伍', '選手', '位置', '局數', '英雄與使用率'],
     (data.players ?? []).filter(row => includesTeam(row) && row[3].toLowerCase().includes(query))
@@ -238,7 +238,7 @@ function render(data) {
 }
 
 try {
-  const seasonFile = () => el('season')?.value === '2025' ? './slices.json' : './slices-2026.json';
+  const seasonFile = () => el('season')?.value === '2025' ? './slices.json?v=2' : './slices-2026.json';
   const response = await fetch(el('patch') ? seasonFile() : el('backtest-season')?.value === '2026' ? './backtest-2026.json' : './dashboard.json');
   if (!response.ok) throw new Error('無法載入');
   let snapshot = await response.json();
